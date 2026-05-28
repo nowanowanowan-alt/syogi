@@ -1,99 +1,750 @@
-body{
-  background:#1b1b1b;
-  color:white;
-  font-family:sans-serif;
+const BOARD_SIZE = 9;
+
+const boardEl =
+document.getElementById("board");
+
+const turnDisplay =
+document.getElementById("turnDisplay");
+
+const selectedInfo =
+document.getElementById("selectedInfo");
+
+let currentTurn = "black";
+
+let selectedPiece = null;
+
+let pieces = [];
+
+let fields = [];
+
+let captured = {
+  black: [],
+  white: []
+};
+
+function createPiece(data){
+
+  return {
+
+    id: crypto.randomUUID(),
+
+    promoted:false,
+
+    killCount:0,
+
+    statuses:[],
+
+    fields:[],
+
+    turnLife:null,
+
+    ...data
+  };
 }
 
-.topbar{
-  display:flex;
-  gap:20px;
-  align-items:center;
+function setupGame(){
+
+  pieces = [
+
+    createPiece({
+      type:"王",
+      team:"black",
+      x:4,
+      y:8,
+      moveType:"king"
+    }),
+
+    createPiece({
+      type:"玉",
+      team:"white",
+      x:4,
+      y:0,
+      moveType:"jewel"
+    }),
+
+    createPiece({
+      type:"歩",
+      team:"black",
+      x:4,
+      y:6,
+      moveType:"pawn"
+    }),
+
+    createPiece({
+      type:"銀",
+      team:"black",
+      x:3,
+      y:8,
+      moveType:"silver"
+    }),
+
+    createPiece({
+      type:"香",
+      team:"black",
+      x:0,
+      y:8,
+      moveType:"lance"
+    }),
+
+    createPiece({
+      type:"桂",
+      team:"black",
+      x:1,
+      y:8,
+      moveType:"knight"
+    }),
+
+    createPiece({
+      type:"角",
+      team:"black",
+      x:2,
+      y:8,
+      moveType:"bishop"
+    }),
+
+    createPiece({
+      type:"飛",
+      team:"black",
+      x:7,
+      y:8,
+
+      moveType:"rook",
+
+      actionsPerTurn:2,
+
+      remainingActions:2
+    }),
+
+    createPiece({
+      type:"金",
+      team:"black",
+      x:5,
+      y:8,
+      moveType:"gold"
+    }),
+  ];
+
+  fields = [];
+
+  currentTurn = "black";
+
+  selectedPiece = null;
+
+  updateFields();
+
+  render();
 }
 
-.game{
-  display:flex;
-  gap:30px;
-  margin-top:20px;
+function render(){
+
+  boardEl.innerHTML = "";
+
+  turnDisplay.textContent =
+  `現在ターン: ${currentTurn}`;
+
+  for(let y=0;y<BOARD_SIZE;y++){
+
+    for(let x=0;x<BOARD_SIZE;x++){
+
+      const cell =
+      document.createElement("div");
+
+      cell.className =
+      "cell " +
+      (
+        (x+y)%2===0
+        ? "dark"
+        : "light"
+      );
+
+      cell.dataset.x = x;
+      cell.dataset.y = y;
+
+      const fieldHere =
+      fields.find(
+        f => f.x===x && f.y===y
+      );
+
+      if(fieldHere){
+
+        cell.classList.add(fieldHere.type);
+      }
+
+      const piece =
+      getPieceAt(x,y);
+
+      if(piece){
+
+        cell.textContent = piece.type;
+
+        cell.classList.add(
+
+          piece.team === "black"
+          ? "piece-black"
+          : "piece-white"
+        );
+      }
+
+      cell.addEventListener(
+        "click",
+        ()=>onCellClick(x,y)
+      );
+
+      boardEl.appendChild(cell);
+    }
+  }
+
+  if(selectedPiece){
+
+    selectedInfo.textContent =
+    `${selectedPiece.type}
+    キル:${selectedPiece.killCount}`;
+
+  }else{
+
+    selectedInfo.textContent = "なし";
+  }
 }
 
-#board{
-  display:grid;
-  grid-template-columns:repeat(9,70px);
-  grid-template-rows:repeat(9,70px);
+function onCellClick(x,y){
 
-  border:3px solid white;
+  const clickedPiece =
+  getPieceAt(x,y);
+
+  if(
+    clickedPiece &&
+    clickedPiece.team === currentTurn
+  ){
+
+    selectedPiece = clickedPiece;
+
+    highlightMoves(clickedPiece);
+
+    render();
+
+    return;
+  }
+
+  if(selectedPiece){
+
+    const moves =
+    generateMoves(selectedPiece);
+
+    const valid =
+    moves.find(
+      m => m.x===x && m.y===y
+    );
+
+    if(valid){
+
+      movePiece(selectedPiece,x,y);
+    }
+  }
 }
 
-.cell{
-  width:70px;
-  height:70px;
+function movePiece(piece,x,y){
 
-  border:1px solid #666;
+  const target =
+  getPieceAt(x,y);
 
-  display:flex;
-  justify-content:center;
-  align-items:center;
+  if(
+    target &&
+    target.team !== piece.team
+  ){
 
-  font-size:28px;
+    capturePiece(piece,target);
+  }
 
-  cursor:pointer;
+  piece.x = x;
+  piece.y = y;
 
-  position:relative;
+  specialTransform(piece);
+
+  if(piece.type === "飛"){
+
+    piece.remainingActions--;
+
+    if(piece.remainingActions > 0){
+
+      selectedPiece = piece;
+
+      render();
+
+      return;
+    }
+  }
+
+  endTurn();
 }
 
-.cell.dark{
-  background:#2b2b2b;
+function endTurn(){
+
+  currentTurn =
+  currentTurn === "black"
+  ? "white"
+  : "black";
+
+  selectedPiece = null;
+
+  for(const p of pieces){
+
+    if(p.type === "飛"){
+
+      p.remainingActions = 2;
+    }
+
+    if(p.turnLife !== null){
+
+      p.turnLife--;
+
+      if(p.turnLife <= 0){
+
+        removePiece(p);
+      }
+    }
+  }
+
+  updateFields();
+
+  render();
 }
 
-.cell.light{
-  background:#3b3b3b;
+function capturePiece(attacker,target){
+
+  attacker.killCount++;
+
+  if(attacker.type === "玉"){
+
+    target.team = attacker.team;
+
+    return;
+  }
+
+  captured[attacker.team]
+  .push(target.type);
+
+  if(
+    target.type === "王" ||
+    target.type === "玉"
+  ){
+
+    spawnPrincess(target);
+  }
+
+  removePiece(target);
 }
 
-.highlight{
-  background:#2d6a4f !important;
+function spawnPrincess(deadPiece){
+
+  pieces.push(
+
+    createPiece({
+
+      type:"姫",
+
+      team:deadPiece.team,
+
+      x:4,
+
+      y:
+      deadPiece.team === "black"
+      ? 8
+      : 0,
+
+      moveType:"none",
+
+      turnLife:2
+    })
+  );
 }
 
-.warpField::after{
-  content:"W";
+function specialTransform(piece){
 
-  position:absolute;
-  top:2px;
-  right:4px;
+  if(
+    piece.type === "角" &&
+    piece.x === 4 &&
+    piece.y === 4
+  ){
 
-  color:#00b4ff;
-  font-size:12px;
+    piece.type = "神";
+
+    piece.moveType = "god";
+
+    piece.turnLife = 5;
+  }
 }
 
-.restField::after{
-  content:"R";
+function removePiece(piece){
 
-  position:absolute;
-  top:2px;
-  right:4px;
-
-  color:#ff4d6d;
-  font-size:12px;
+  pieces =
+  pieces.filter(
+    p => p.id !== piece.id
+  );
 }
 
-.buffField::after{
-  content:"B";
+function getPieceAt(x,y){
 
-  position:absolute;
-  top:2px;
-  right:4px;
-
-  color:#ffd60a;
-  font-size:12px;
+  return pieces.find(
+    p => p.x===x && p.y===y
+  );
 }
 
-.side{
-  width:250px;
+function inside(x,y){
+
+  return (
+    x >= 0 &&
+    x < BOARD_SIZE &&
+    y >= 0 &&
+    y < BOARD_SIZE
+  );
 }
 
-.piece-black{
-  color:#7ee787;
+function generateMoves(piece){
+
+  switch(piece.moveType){
+
+    case "pawn":
+      return pawnMoves(piece);
+
+    case "silver":
+      return around(piece,3,false);
+
+    case "lance":
+      return orthogonal(piece,1);
+
+    case "knight":
+      return diagonal(piece,5);
+
+    case "bishop":
+
+      return [
+
+        ...orthogonal(piece,1),
+
+        ...diagonal(piece,2)
+      ];
+
+    case "rook":
+
+      if(piece.remainingActions === 2){
+
+        return orthogonal(piece,2);
+      }
+
+      return orthogonal(piece,4);
+
+    case "gold":
+      return around(piece,4,false);
+
+    case "king":
+      return around(piece,2,true);
+
+    case "jewel":
+      return around(piece,3,false);
+
+    case "god":
+
+      return [
+
+        ...orthogonal(piece,3),
+
+        ...diagonal(piece,5)
+      ];
+
+    default:
+      return [];
+  }
 }
 
-.piece-white{
-  color:#ff7b72;
+function pawnMoves(piece){
+
+  if(piece.killCount === 0){
+
+    return around(piece,3,true);
+  }
+
+  if(piece.killCount === 1){
+
+    return around(piece,4,false);
+  }
+
+  return around(piece,6,false);
 }
+
+function around(
+  piece,
+  range,
+  diagonalAllowed
+){
+
+  const result = [];
+
+  for(let dx=-range;dx<=range;dx++){
+
+    for(let dy=-range;dy<=range;dy++){
+
+      if(dx===0 && dy===0){
+
+        continue;
+      }
+
+      if(!diagonalAllowed){
+
+        if(
+          Math.abs(dx)+Math.abs(dy)
+          > range
+        ){
+
+          continue;
+        }
+      }
+
+      const nx = piece.x + dx;
+      const ny = piece.y + dy;
+
+      if(!inside(nx,ny)){
+
+        continue;
+      }
+
+      const target =
+      getPieceAt(nx,ny);
+
+      if(
+        !target ||
+        target.team !== piece.team
+      ){
+
+        result.push({
+          x:nx,
+          y:ny
+        });
+      }
+    }
+  }
+
+  return result;
+}
+
+function orthogonal(piece,range){
+
+  const result = [];
+
+  for(let i=1;i<=range;i++){
+
+    addMove(
+      result,
+      piece,
+      piece.x+i,
+      piece.y
+    );
+
+    addMove(
+      result,
+      piece,
+      piece.x-i,
+      piece.y
+    );
+
+    addMove(
+      result,
+      piece,
+      piece.x,
+      piece.y+i
+    );
+
+    addMove(
+      result,
+      piece,
+      piece.x,
+      piece.y-i
+    );
+  }
+
+  return result;
+}
+
+function diagonal(piece,range){
+
+  const result = [];
+
+  for(let i=1;i<=range;i++){
+
+    addMove(
+      result,
+      piece,
+      piece.x+i,
+      piece.y+i
+    );
+
+    addMove(
+      result,
+      piece,
+      piece.x-i,
+      piece.y-i
+    );
+
+    addMove(
+      result,
+      piece,
+      piece.x+i,
+      piece.y-i
+    );
+
+    addMove(
+      result,
+      piece,
+      piece.x-i,
+      piece.y+i
+    );
+  }
+
+  return result;
+}
+
+function addMove(
+  result,
+  piece,
+  x,
+  y
+){
+
+  if(!inside(x,y)){
+
+    return;
+  }
+
+  const target =
+  getPieceAt(x,y);
+
+  if(
+    !target ||
+    target.team !== piece.team
+  ){
+
+    result.push({x,y});
+  }
+}
+
+function highlightMoves(piece){
+
+  render();
+
+  const moves =
+  generateMoves(piece);
+
+  const cells =
+  document.querySelectorAll(".cell");
+
+  moves.forEach(move=>{
+
+    cells.forEach(cell=>{
+
+      if(
+        Number(cell.dataset.x)
+        === move.x &&
+        Number(cell.dataset.y)
+        === move.y
+      ){
+
+        cell.classList.add("highlight");
+      }
+    });
+  });
+}
+
+function updateFields(){
+
+  fields = [];
+
+  for(const piece of pieces){
+
+    if(piece.type === "香"){
+
+      for(let y=0;y<9;y++){
+
+        for(let x=0;x<9;x++){
+
+          fields.push({
+
+            type:"buffField",
+
+            x,
+            y
+          });
+        }
+      }
+    }
+
+    if(piece.type === "角"){
+
+      createRadiusField(
+        piece,
+        1,
+        "warpField"
+      );
+    }
+
+    if(piece.type === "王"){
+
+      createRadiusField(
+        piece,
+        1,
+        "restField"
+      );
+    }
+
+    if(piece.type === "桂"){
+
+      if(piece.killCount >= 1){
+
+        createRadiusField(
+
+          piece,
+
+          piece.killCount >= 2
+          ? 2
+          : 1,
+
+          "warpField"
+        );
+      }
+    }
+  }
+}
+
+function createRadiusField(
+  piece,
+  radius,
+  type
+){
+
+  for(let dx=-radius;dx<=radius;dx++){
+
+    for(let dy=-radius;dy<=radius;dy++){
+
+      const x = piece.x + dx;
+      const y = piece.y + dy;
+
+      if(!inside(x,y)){
+
+        continue;
+      }
+
+      fields.push({
+        type,
+        x,
+        y
+      });
+    }
+  }
+}
+
+document
+.getElementById("resetBtn")
+.addEventListener(
+  "click",
+  setupGame
+);
+
+setupGame();
