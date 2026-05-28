@@ -194,6 +194,188 @@ function render(){
     }
   }
 
+  // ========================
+// 開始前ドラフトシステム
+// ========================
+
+// プレイヤーが最初に選べる駒一覧
+const START_SELECTABLE = [
+  "歩",
+  "銀",
+  "香",
+  "桂",
+  "角",
+  "飛",
+  "金"
+];
+
+// 現在ドラフト中か
+let isDraftPhase = true;
+
+// 黒が選んだ駒
+let blackDraft = [];
+
+// 白が選んだ駒
+let whiteDraft = [];
+
+// 何個置いたか
+let placedCount = {
+  black:0,
+  white:0
+};
+
+// ドラフトUI作成
+function createDraftUI(){
+
+  const side =
+  document.querySelector(".side");
+
+  const draftDiv =
+  document.createElement("div");
+
+  draftDiv.id = "draftUI";
+
+  draftDiv.innerHTML = `
+    <h2>駒選択</h2>
+    <div id="draftButtons"></div>
+  `;
+
+  side.prepend(draftDiv);
+
+  const buttons =
+  document.getElementById("draftButtons");
+
+  START_SELECTABLE.forEach(type=>{
+
+    const btn =
+    document.createElement("button");
+
+    btn.textContent = type;
+
+    btn.addEventListener("click",()=>{
+
+      selectDraftPiece(type);
+    });
+
+    buttons.appendChild(btn);
+  });
+}
+
+// 駒選択
+function selectDraftPiece(type){
+
+  if(!isDraftPhase){
+
+    return;
+  }
+
+  const currentDraft =
+  currentTurn === "black"
+  ? blackDraft
+  : whiteDraft;
+
+  if(currentDraft.length >= 3){
+
+    return;
+  }
+
+  currentDraft.push(type);
+
+  alert(
+    `${currentTurn} が ${type} を選択`
+  );
+
+  if(currentDraft.length >= 3){
+
+    alert(
+      `${currentTurn} は配置してください`
+    );
+  }
+}
+
+// ドラフト配置
+function placeDraftPiece(type,x,y){
+
+  pieces.push(
+
+    createPiece({
+
+      type,
+
+      team:currentTurn,
+
+      x,
+      y,
+
+      moveType:
+      convertMoveType(type)
+    })
+  );
+
+  placedCount[currentTurn]++;
+
+  // 3個置いたら交代
+  if(placedCount[currentTurn] >= 3){
+
+    if(currentTurn === "black"){
+
+      currentTurn = "white";
+
+      alert("白のターン");
+    }
+    else{
+
+      isDraftPhase = false;
+
+      currentTurn = "black";
+
+      alert("ゲーム開始！");
+    }
+  }
+
+  render();
+}
+
+// moveType変換
+function convertMoveType(type){
+
+  switch(type){
+
+    case "歩":
+      return "pawn";
+
+    case "銀":
+      return "silver";
+
+    case "香":
+      return "lance";
+
+    case "桂":
+      return "knight";
+
+    case "角":
+      return "bishop";
+
+    case "飛":
+      return "rook";
+
+    case "金":
+      return "gold";
+
+    case "王":
+      return "king";
+
+    case "玉":
+      return "jewel";
+
+    case "神":
+      return "god";
+
+    default:
+      return "none";
+  }
+}
+
   if(selectedPiece){
 
     selectedInfo.textContent =
