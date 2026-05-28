@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>改造将棋</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <h1>改造将棋</h1>
+
+    <div id="turnDisplay"></div>
+
+    <button id="resetBtn">
+      リセット
+    </button>
+  </div>
+
+  <div class="game">
+
+    <div id="board"></div>
+
+    <div class="side">
+
+      <h2>選択中</h2>
+      <div id="selectedInfo">なし</div>
+
+      <h2>黒の持ち駒</h2>
+      <div id="blackCaptured"></div>
+
+      <h2>白の持ち駒</h2>
+      <div id="whiteCaptured"></div>
+
+    </div>
+
+  </div>
+
+  <script src="script.js"></script>
+
+</body>
+</html>
