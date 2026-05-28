@@ -44,85 +44,7 @@ function createPiece(data){
 
 function setupGame(){
 
-  pieces = [
-
-    createPiece({
-      type:"王",
-      team:"black",
-      x:4,
-      y:8,
-      moveType:"king"
-    }),
-
-    createPiece({
-      type:"玉",
-      team:"white",
-      x:4,
-      y:0,
-      moveType:"jewel"
-    }),
-
-    createPiece({
-      type:"歩",
-      team:"black",
-      x:4,
-      y:6,
-      moveType:"pawn"
-    }),
-
-    createPiece({
-      type:"銀",
-      team:"black",
-      x:3,
-      y:8,
-      moveType:"silver"
-    }),
-
-    createPiece({
-      type:"香",
-      team:"black",
-      x:0,
-      y:8,
-      moveType:"lance"
-    }),
-
-    createPiece({
-      type:"桂",
-      team:"black",
-      x:1,
-      y:8,
-      moveType:"knight"
-    }),
-
-    createPiece({
-      type:"角",
-      team:"black",
-      x:2,
-      y:8,
-      moveType:"bishop"
-    }),
-
-    createPiece({
-      type:"飛",
-      team:"black",
-      x:7,
-      y:8,
-
-      moveType:"rook",
-
-      actionsPerTurn:2,
-
-      remainingActions:2
-    }),
-
-    createPiece({
-      type:"金",
-      team:"black",
-      x:5,
-      y:8,
-      moveType:"gold"
-    }),
-  ];
+  pieces = [];
 
   fields = [];
 
@@ -130,9 +52,20 @@ function setupGame(){
 
   selectedPiece = null;
 
-  updateFields();
+  isDraftPhase = true;
+
+  blackDraft = [];
+
+  whiteDraft = [];
+
+  placedCount = {
+    black:0,
+    white:0
+  };
 
   render();
+
+  createDraftUI();
 }
 
 function render(){
@@ -388,7 +321,58 @@ function convertMoveType(type){
   }
 }
 
-function onCellClick(x,y){
+function onCellClick(x,y){// ========================
+// ドラフト配置処理
+// ========================
+
+if(isDraftPhase){
+
+  const currentDraft =
+  currentTurn === "black"
+  ? blackDraft
+  : whiteDraft;
+
+  if(
+    currentDraft.length >
+    placedCount[currentTurn]
+  ){
+
+    // 黒は下3段
+    if(
+      currentTurn === "black" &&
+      y < 6
+    ){
+
+      alert("黒は下3段に置く");
+      return;
+    }
+
+    // 白は上3段
+    if(
+      currentTurn === "white" &&
+      y > 2
+    ){
+
+      alert("白は上3段に置く");
+      return;
+    }
+
+    // 重複配置禁止
+    if(getPieceAt(x,y)){
+
+      return;
+    }
+
+    const type =
+    currentDraft[
+      placedCount[currentTurn]
+    ];
+
+    placeDraftPiece(type,x,y);
+
+    return;
+  }
+}
 
   const clickedPiece =
   getPieceAt(x,y);
