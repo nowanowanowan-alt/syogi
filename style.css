@@ -1,6 +1,6 @@
 body{
-  background:#1b1b1b;
-  color:white;
+  background:#f5f5f5;
+  color:#222;
   font-family:sans-serif;
 }
 
@@ -20,37 +20,42 @@ body{
   display:grid;
   grid-template-columns:repeat(9,70px);
   grid-template-rows:repeat(9,70px);
-
-  border:3px solid white;
+  border:4px solid #5c3b1e;
+  background:#c89b63;
 }
 
 .cell{
   width:70px;
   height:70px;
-
-  border:1px solid #666;
-
+  border:1px solid #7a4e26;
   display:flex;
   justify-content:center;
   align-items:center;
-
   font-size:28px;
-
   cursor:pointer;
-
   position:relative;
+  background:#d9b382;
+  transition:0.15s;
 }
 
 .cell.dark{
-  background:#2b2b2b;
+  background:#c89b63;
 }
 
 .cell.light{
-  background:#3b3b3b;
+  background:#ddb98c;
 }
 
 .highlight{
-  background:#2d6a4f !important;
+  background:#fff3a3 !important;
+  box-shadow:
+  inset 0 0 0 3px #e6c200;
+}
+
+.selected{
+  background:#ffe066 !important;
+  box-shadow:
+  inset 0 0 0 4px #ffb703;
 }
 
 .warpField::after{
