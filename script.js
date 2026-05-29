@@ -793,26 +793,28 @@ function addMove(
 }
 
 function highlightMoves(piece){
-
   render();
+  const cells =
+  document.querySelectorAll(".cell");
+  // 選択中コマを黄色に
+  cells.forEach(cell=>{
+    if(
+      Number(cell.dataset.x) === piece.x &&
+      Number(cell.dataset.y) === piece.y
+    ){
+      cell.classList.add("selected");
+    }
+  });
 
   const moves =
   generateMoves(piece);
-
-  const cells =
-  document.querySelectorAll(".cell");
-
+  // 動ける場所を薄黄色に
   moves.forEach(move=>{
-
     cells.forEach(cell=>{
-
       if(
-        Number(cell.dataset.x)
-        === move.x &&
-        Number(cell.dataset.y)
-        === move.y
+        Number(cell.dataset.x) === move.x &&
+        Number(cell.dataset.y) === move.y
       ){
-
         cell.classList.add("highlight");
       }
     });
