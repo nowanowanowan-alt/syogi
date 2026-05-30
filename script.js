@@ -43,7 +43,7 @@ function createPiece(data){
 }
 
 function setupGame(){
-
+console.log("setupGame開始");
   pieces = [];
 
   fields = [];
@@ -64,8 +64,9 @@ function setupGame(){
   };
 
   render();
-
+console.log("render終わり");
   createDraftUI();
+  console.log("createDraftUI終わり");
 }
 
 function render(){
