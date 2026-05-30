@@ -65,7 +65,7 @@ function setupGame(){
 
   render();
 
-  //createDraftUI();
+  createDraftUI();
 }
 
 function render(){
