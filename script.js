@@ -125,6 +125,16 @@ function render(){
 
       boardEl.appendChild(cell);
     }
+  if(selectedPiece){
+
+    selectedInfo.textContent =
+    `${selectedPiece.type}
+    キル:${selectedPiece.killCount}`;
+
+  }else{
+
+    selectedInfo.textContent = "なし";
+  }
   }
 
   // ========================
@@ -306,18 +316,6 @@ function convertMoveType(type){
 
     default:
       return "none";
-  }
-}
-
-  if(selectedPiece){
-
-    selectedInfo.textContent =
-    `${selectedPiece.type}
-    キル:${selectedPiece.killCount}`;
-
-  }else{
-
-    selectedInfo.textContent = "なし";
   }
 }
 
