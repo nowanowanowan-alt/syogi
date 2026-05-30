@@ -62,6 +62,26 @@ console.log("setupGame開始");
     black:0,
     white:0
   };
+  
+  pieces.push(
+  createPiece({
+    type:"王",
+    team:"black",
+    x:4,
+    y:8,
+    moveType:"king"
+  })
+);
+
+pieces.push(
+  createPiece({
+    type:"玉",
+    team:"white",
+    x:4,
+    y:0,
+    moveType:"jewel"
+  })
+);
 
   render();
 console.log("render終わり");
