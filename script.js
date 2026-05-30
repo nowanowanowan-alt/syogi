@@ -125,7 +125,8 @@ function render(){
 
       boardEl.appendChild(cell);
     }
-  if(selectedPiece){
+  }
+if(selectedPiece){
 
     selectedInfo.textContent =
     `${selectedPiece.type}
@@ -135,8 +136,6 @@ function render(){
 
     selectedInfo.textContent = "なし";
   }
-  }
-
   // ========================
 // 開始前ドラフトシステム
 // ========================
