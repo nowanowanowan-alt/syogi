@@ -916,4 +916,4 @@ document
 
 console.log(typeof createDraftUI);
 
-setupGame();
+//setupGame();
