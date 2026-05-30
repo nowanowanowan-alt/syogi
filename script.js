@@ -915,4 +915,6 @@ document
   setupGame
 );
 
+console.log(typeof createDraftUI);
+
 setupGame();
