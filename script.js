@@ -328,7 +328,7 @@ function convertMoveType(type){
     case "金":
       return "gold";
 
-    case "砲"
+    case "砲":
       return "cannon";
 
     case "王":
