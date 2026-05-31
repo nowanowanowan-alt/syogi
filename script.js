@@ -171,7 +171,8 @@ const START_SELECTABLE = [
   "桂",
   "角",
   "飛",
-  "金"
+  "金",
+  "砲"
 ];
 
 // 現在ドラフト中か
@@ -326,6 +327,9 @@ function convertMoveType(type){
 
     case "金":
       return "gold";
+
+    case "砲"
+      return "cannon";
 
     case "王":
       return "king";
@@ -506,39 +510,24 @@ function capturePiece(attacker,target){
   captured[attacker.team]
   .push(target.type);
 
-  if(
-    target.type === "王" ||
-    target.type === "玉"
-  ){
-
-    spawnPrincess(target);
-  }
-
   removePiece(target);
+
+  checkWinner();
 }
 
-function spawnPrincess(deadPiece){
+function checkWinner(){
 
-  pieces.push(
+  const teams =
+  [...new Set(
+    pieces.map(p => p.team)
+  )];
 
-    createPiece({
+  if(teams.length <= 1){
 
-      type:"姫",
-
-      team:deadPiece.team,
-
-      x:4,
-
-      y:
-      deadPiece.team === "black"
-      ? 8
-      : 0,
-
-      moveType:"none",
-
-      turnLife:2
-    })
-  );
+    alert(
+      `${teams[0]} の勝利！`
+    );
+  }
 }
 
 function specialTransform(piece){
@@ -618,6 +607,9 @@ function generateMoves(piece){
 
     case "gold":
       return around(piece,4,false);
+    
+    case "cannon":
+      return orthogonal(piece,1);
 
     case "king":
       return around(piece,2,true);
@@ -868,6 +860,15 @@ function updateFields(){
         "warpField"
       );
     }
+    
+    if(piece.type === "砲"){
+      
+      createCrossField(
+        piece,
+        7,
+        "restField"
+      );
+    }
 
     if(piece.type === "王"){
 
@@ -919,6 +920,40 @@ function createRadiusField(
         type,
         x,
         y
+      });
+    }
+  }
+}
+
+function createCrossField(
+  piece,
+  range,
+  type
+){
+
+  for(let i=-range;i<=range;i++){
+
+    const x1 = piece.x + i;
+    const y1 = piece.y;
+
+    if(inside(x1,y1)){
+
+      fields.push({
+        type,
+        x:x1,
+        y:y1
+      });
+    }
+
+    const x2 = piece.x;
+    const y2 = piece.y + i;
+
+    if(inside(x2,y2)){
+
+      fields.push({
+        type,
+        x:x2,
+        y:y2
       });
     }
   }
