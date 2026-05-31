@@ -403,11 +403,8 @@ if(isDraftPhase){
   ){
 
     selectedPiece = clickedPiece;
-
-    highlightMoves(clickedPiece);
-
     render();
-
+    highlightMoves(clickedPiece);
     return;
   }
 
@@ -813,7 +810,6 @@ function addMove(
 }
 
 function highlightMoves(piece){
-  render();
   const cells =
   document.querySelectorAll(".cell");
   // 選択中コマを黄色に
