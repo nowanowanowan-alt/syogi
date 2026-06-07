@@ -178,7 +178,7 @@ const START_SELECTABLE = [
   "金",
   "砲",
   "姫",
-  "賢",
+  "賢",]
 
 // 現在ドラフト中か
 let isDraftPhase = true;
