@@ -36,7 +36,9 @@ function createPiece(data){
 
     promoted:false,
 
-    killCount:0,
+    killCount:0,    
+    
+    summonedCount:0,
     
     restTurns:0,
 
@@ -238,60 +240,11 @@ function createDraftUI(){
 
       selectDraftPiece(type);
       
-    })})
-    };
-
-// 現在ドラフト中か
-let isDraftPhase = true;
-
-// 黒が選んだ駒
-let blackDraft = [];
-
-// 白が選んだ駒
-let whiteDraft = [];
-
-// 何個置いたか
-let placedCount = {
-  black:0,
-  white:0
-};
-
-// ドラフトUI作成
-function createDraftUI(){
-
-  const side =
-  document.querySelector(".side");
-
-  const draftDiv =
-  document.createElement("div");
-
-  draftDiv.id = "draftUI";
-
-  draftDiv.innerHTML = `
-    <h2>駒選択</h2>
-    <div id="draftButtons"></div>
-  `;
-
-  side.prepend(draftDiv);
-
-  const buttons =
-  document.getElementById("draftButtons");
-
-  START_SELECTABLE.forEach(type=>{
-
-    const btn =
-    document.createElement("button");
-
-    btn.textContent = type;
-
-    btn.addEventListener("click",()=>{
-
-      selectDraftPiece(type);
     });
+  buttons.appendChild(btn);
+  })
+    }
 
-    buttons.appendChild(btn);
-  });
-}
 
 // 駒選択
 function selectDraftPiece(type){
@@ -384,6 +337,9 @@ function convertMoveType(type){
 
     case "桂":
       return "knight";
+
+    case "騎":
+      return "rider";
 
     case "角":
       return "bishop";
@@ -558,6 +514,18 @@ function handleSkillClick(x,y){
       );
 
       break;
+    
+    case "summonRider":
+
+      if(
+        summonRider(
+        skillPiece,
+        x,
+        y
+        )
+        ){
+      finishSkill();
+      break;
   }
 }
 
@@ -718,13 +686,25 @@ function generateMoves(piece){
       return pawnMoves(piece);
 
     case "silver":
-      return around(piece,3);
+      if(isOnBuffField(piece)){
+        return[
+          ...orthogonal(piece,4),
+          ...diagonal(piece,4)
+        ];
+      }
+      return orthogonal(piece,3);
 
     case "lance":
       return orthogonal(piece,1);
 
     case "knight":
-      return diagonal(piece,5);
+      if(isOnBuffField(piece)){
+        return orthogonal(piece,2);
+      }
+      return orthogonal(piece,1);
+
+    case "rider":
+      return riderMoves(piece);
 
     case "bishop":
 
@@ -769,17 +749,66 @@ function generateMoves(piece){
 
 function pawnMoves(piece){
 
-  if(piece.killCount === 0){
+  let effectiveKills =
+  piece.killCount;
 
-    return around(piece,3);
+  if(isOnBuffField(piece)){
+
+    effectiveKills++;
   }
 
-  if(piece.killCount === 1){
+  if(effectiveKills === 0){
 
-    return around(piece,4);
+    return orthogonal(piece,3);
   }
 
-  return around(piece,6);
+  if(effectiveKills === 1){
+
+    return [
+
+      ...orthogonal(piece,4),
+
+      ...diagonal(piece,4)
+    ];
+  }
+
+  return around(piece,4);
+}
+
+function riderMoves(piece){
+  
+  const result = [];
+
+  const dir =
+  piece.team === "black"
+  ? -1
+  : 1;
+
+  for(let i=1;i<=9;i++){
+
+    const x = piece.x;
+    const y = piece.y + dir*i;
+
+    if(!inside(x,y)){
+      continue;
+    }
+
+    addMove(
+      result,
+      piece,
+      x,
+      y
+    );
+}
+
+function isOnBuffField(piece){
+
+  return fields.some(
+    f =>
+      f.type === "buffField" &&
+      f.x === piece.x &&
+      f.y === piece.y
+  );
 }
     
 function around(piece,range){
@@ -974,6 +1003,18 @@ function updateFields(){
     }
 
     if(piece.type === "角"){
+
+      createRadiusField(
+        piece,
+        1,
+        "warpField"
+      );
+    }
+    
+    if(
+      piece.type === "騎" &&
+      isOnBuffField(piece)
+    ){
 
       createRadiusField(
         piece,
@@ -1203,6 +1244,20 @@ function updateFields(){
           }
         );
       }
+      if(piece.type === "桂"){
+
+        addSkillButton(
+          "騎召喚",
+          ()=>{
+
+            skillMode =
+              "summonRider";
+
+            skillPiece =
+              piece;
+          }
+        );
+      }
 
       if(piece.type === "銀"){
         
@@ -1394,7 +1449,94 @@ function silverTargetClick(
 
   render();
 }
+  
+function summonRider(
+  piece,
+  x,
+  y
+){
 
+  if(piece.summonedCount >= 5){
+
+    alert(
+      "これ以上召喚できません"
+    );
+
+    return false;
+  }
+
+  // 黒は最下段
+  if(
+    piece.team === "black" &&
+    y !== 8
+  ){
+
+    alert(
+      "最下段に置いてください"
+    );
+
+    return false;
+  }
+
+  // 白は最上段
+  if(
+    piece.team === "white" &&
+    y !== 0
+  ){
+
+    alert(
+      "最上段に置いてください"
+    );
+
+    return false;
+  }
+
+  if(getPieceAt(x,y)){
+
+    alert(
+      "そのマスには置けません"
+    );
+
+    return true;
+  }
+
+  pieces.push(
+
+    createPiece({
+
+      type:"騎",
+
+      team:piece.team,
+
+      x,
+      y,
+
+      moveType:"rider"
+    })
+  );
+
+  piece.summonedCount++;
+
+  render();
+}
+  pieces.push(
+
+    createPiece({
+
+      type:"騎",
+
+      team:piece.team,
+
+      x,
+      y,
+
+      moveType:"rider"
+    })
+  );
+
+  piece.summonedCount++;
+}
+  
 function placeWiseField(
   piece,
   x,
