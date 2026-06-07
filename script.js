@@ -22,6 +22,10 @@ let captured = {
   white: []
 };
 
+let skillMode = null;
+
+let skillPiece = null;
+
 function createPiece(data){
 
   return {
@@ -39,6 +43,10 @@ function createPiece(data){
     statuses:[],
 
     fields:[],
+    
+    warpFieldUses:2,
+    
+    restFieldUses:2,
 
     turnLife:null,
 
@@ -178,7 +186,8 @@ const START_SELECTABLE = [
   "金",
   "砲",
   "姫",
-  "賢",]
+  "賢",
+]
 
 // 現在ドラフト中か
 let isDraftPhase = true;
@@ -227,7 +236,7 @@ function createDraftUI(){
 
       selectDraftPiece(type);
 
-];
+    };
 
 // 現在ドラフト中か
 let isDraftPhase = true;
@@ -397,9 +406,6 @@ function convertMoveType(type){
     case "玉":
       return "jewel";
 
-    case "神":
-      return "god";
-
     default:
       return "none";
   }
@@ -515,8 +521,6 @@ function movePiece(piece,x,y){
 
   applyFieldEffects(piece);
 
-  specialTransform(piece);
-
   if(piece.type === "飛"){
 
     piece.remainingActions--;
@@ -611,22 +615,6 @@ function checkWinner(){
   }
 }
 
-function specialTransform(piece){
-
-  if(
-    piece.type === "角" &&
-    piece.x === 4 &&
-    piece.y === 4
-  ){
-
-    piece.type = "神";
-
-    piece.moveType = "god";
-
-    piece.turnLife = 5;
-  }
-}
-
 function removePiece(piece){
 
   pieces =
@@ -695,20 +683,14 @@ function generateMoves(piece){
     case "princess":
       return around(piece,2);
 
+    case "sage"
+      return around(piece,2);
+      
     case "king":
       return around(piece,2);
 
     case "jewel":
       return around(piece,3);
-
-    case "god":
-
-      return [
-
-        ...orthogonal(piece,3),
-
-        ...diagonal(piece,5)
-      ];
 
     default:
       return [];
@@ -1043,6 +1025,10 @@ function updateFields(){
     }
     
     function applyRestField(piece){
+
+      if(piece.type === "銀"){
+        return;
+      }
       
       if(piece.restTurns <= 0){
         piece.restTurns = 1;
@@ -1109,6 +1095,126 @@ function updateFields(){
           });
         }
       }
+    }
+    
+//スキル
+    
+    function showSkillButtons(piece){
+
+      const area =
+  
+        document.getElementById("skillArea");
+
+      area.innerHTML = "";
+
+      if(piece.type === "賢"){
+
+        addSkillButton(
+          "ワープ配置",
+          ()=>skillMode="wiseWarp"
+        );
+        
+        addSkillButton(
+          "休み配置",
+          ()=>skillMode="wiseRest"
+        );
+      }
+
+      if(piece.type === "銀"){
+        
+        addSkillButton(
+          "歩×2に分身",
+          ()=>skillMode="silverPawn2"
+        );
+
+        addSkillButton(
+          "歩＋香に分身",
+          ()=>skillMode="silverPawnLance"
+        );
+      }
+    }
+    
+    function addSkillButton(
+      text,
+      callback
+    ){
+      const btn =
+        document.createElement("button");
+
+      btn.textContent = text;
+
+      btn.onclick = callback;
+
+      document
+        .getElementById("skillArea")
+        .appendChild(btn);
+    }
+    
+    function useSilverSkill(
+      silver,
+      mode
+    ){
+
+      const spots =
+        around(silver,1);
+
+      if(mode === "silverPawn2"){
+
+        spawnClone(
+          silver,
+          spots[0],
+          "歩"
+        );
+
+        spawnClone(
+          silver,
+          spots[1],
+          "歩"
+        );
+      }
+
+      if(mode === "silverPawnLance"){
+
+        spawnClone(
+          silver,
+          spots[0],
+          "歩"
+        );
+
+        spawnClone(
+          silver,
+          spots[1],
+          "香"
+        );
+      }
+    }
+    
+    function spawnClone(
+      silver,
+      pos,
+      type
+    ){
+
+      if(!pos){
+        return;
+      }
+
+      pieces.push(
+
+        createPiece({
+
+          type:type,
+
+          team:silver.team,
+
+          x:pos.x,
+
+          y:pos.y,
+
+          moveType:
+            convertMoveType(type)
+        })
+      );
     }
 
 document
