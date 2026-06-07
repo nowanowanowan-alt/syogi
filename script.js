@@ -31,6 +31,10 @@ function createPiece(data){
     promoted:false,
 
     killCount:0,
+    
+    restTurns:0,
+
+    converted:false,
 
     statuses:[],
 
@@ -172,7 +176,57 @@ const START_SELECTABLE = [
   "角",
   "飛",
   "金",
-  "砲"
+  "砲",
+  "姫",
+  "賢"
+
+// 現在ドラフト中か
+let isDraftPhase = true;
+
+// 黒が選んだ駒
+let blackDraft = [];
+
+// 白が選んだ駒
+let whiteDraft = [];
+
+// 何個置いたか
+let placedCount = {
+  black:0,
+  white:0
+};
+
+// ドラフトUI作成
+function createDraftUI(){
+
+  const side =
+  document.querySelector(".side");
+
+  const draftDiv =
+  document.createElement("div");
+
+  draftDiv.id = "draftUI";
+
+  draftDiv.innerHTML = `
+    <h2>駒選択</h2>
+    <div id="draftButtons"></div>
+  `;
+
+  side.prepend(draftDiv);
+
+  const buttons =
+  document.getElementById("draftButtons");
+
+  START_SELECTABLE.forEach(type=>{
+
+    const btn =
+    document.createElement("button");
+
+    btn.textContent = type;
+
+    btn.addEventListener("click",()=>{
+
+      selectDraftPiece(type);
+
 ];
 
 // 現在ドラフト中か
@@ -330,6 +384,12 @@ function convertMoveType(type){
 
     case "砲":
       return "cannon";
+    
+    case "姫":
+      return "princess";
+
+    case "賢":
+      return "sage";
 
     case "王":
       return "king";
@@ -402,15 +462,23 @@ if(isDraftPhase){
   getPieceAt(x,y);
 
   if(
-    clickedPiece &&
-    clickedPiece.team === currentTurn
+  clickedPiece &&
+  clickedPiece.team === currentTurn
   ){
 
-    selectedPiece = clickedPiece;
-    render();
-    highlightMoves(clickedPiece);
+  if(clickedPiece.restTurns > 0){
+
+    alert("この駒は休み中");
     return;
   }
+
+  selectedPiece = clickedPiece;
+
+  render();
+  highlightMoves(clickedPiece);
+
+  return;
+}
 
   if(selectedPiece){
 
@@ -445,6 +513,8 @@ function movePiece(piece,x,y){
   piece.x = x;
   piece.y = y;
 
+  applyFieldEffects(piece);
+
   specialTransform(piece);
 
   if(piece.type === "飛"){
@@ -478,6 +548,13 @@ function endTurn(){
     if(p.type === "飛"){
 
       p.remainingActions = 2;
+      
+    }
+    
+    if(p.restTurns > 0){
+
+    p.restTurns--;
+
     }
 
     if(p.turnLife !== null){
@@ -490,6 +567,7 @@ function endTurn(){
       }
     }
   }
+}
 
   updateFields();
 
@@ -504,12 +582,15 @@ function capturePiece(attacker,target){
 
     target.team = attacker.team;
 
+    target.converted = true;
+    
     return;
   }
-
-  captured[attacker.team]
-  .push(target.type);
-
+  
+  if(target.type === "姫"){
+    removePiece(attacker);
+  }
+  
   removePiece(target);
 
   checkWinner();
@@ -579,7 +660,7 @@ function generateMoves(piece){
       return pawnMoves(piece);
 
     case "silver":
-      return around(piece,3,false);
+      return around(piece,3);
 
     case "lance":
       return orthogonal(piece,1);
@@ -606,16 +687,19 @@ function generateMoves(piece){
       return orthogonal(piece,4);
 
     case "gold":
-      return around(piece,4,false);
+      return around(piece,3);
     
     case "cannon":
       return orthogonal(piece,1);
+    
+    case "princess":
+      return around(piece,2);
 
     case "king":
-      return around(piece,2,true);
+      return around(piece,2);
 
     case "jewel":
-      return around(piece,3,false);
+      return around(piece,3);
 
     case "god":
 
@@ -635,22 +719,18 @@ function pawnMoves(piece){
 
   if(piece.killCount === 0){
 
-    return around(piece,3,true);
+    return around(piece,3);
   }
 
   if(piece.killCount === 1){
 
-    return around(piece,4,false);
+    return around(piece,4);
   }
 
-  return around(piece,6,false);
+  return around(piece,6);
 }
-
-function around(
-  piece,
-  range,
-  diagonalAllowed
-){
+    
+function around(piece,range){
 
   const result = [];
 
@@ -661,17 +741,6 @@ function around(
       if(dx===0 && dy===0){
 
         continue;
-      }
-
-      if(!diagonalAllowed){
-
-        if(
-          Math.abs(dx)+Math.abs(dy)
-          > range
-        ){
-
-          continue;
-        }
       }
 
       const nx = piece.x + dx;
@@ -897,67 +966,150 @@ function updateFields(){
     }
   }
 }
-
-function createRadiusField(
-  piece,
-  radius,
-  type
-){
-
-  for(let dx=-radius;dx<=radius;dx++){
-
-    for(let dy=-radius;dy<=radius;dy++){
-
-      const x = piece.x + dx;
-      const y = piece.y + dy;
-
-      if(!inside(x,y)){
-
-        continue;
+    
+    function applyFieldEffects(piece){
+      
+      const field =
+        fields.find(
+          f =>
+            f.x === piece.x &&
+            f.y === piece.y
+        );
+      
+      if(!field){
+        return;
       }
 
-      fields.push({
-        type,
-        x,
-        y
-      });
-    }
-  }
-}
+      if(field.type === "warpField"){
+        applyWarpField(piece);
+      }
 
-function createCrossField(
-  piece,
-  range,
-  type
-){
-
-  for(let i=-range;i<=range;i++){
-
-    const x1 = piece.x + i;
-    const y1 = piece.y;
-
-    if(inside(x1,y1)){
-
-      fields.push({
-        type,
-        x:x1,
-        y:y1
-      });
+      if(field.type === "restField"){
+        applyRestField(piece);
+      }
     }
 
-    const x2 = piece.x;
-    const y2 = piece.y + i;
+    function applyWarpField(piece){
 
-    if(inside(x2,y2)){
+      const candidates = [];
 
-      fields.push({
-        type,
-        x:x2,
-        y:y2
-      });
+      for(let dx=-3;dx<=3;dx++){
+
+        for(let dy=-3;dy<=3;dy++){
+
+          const nx = piece.x + dx;
+          const ny = piece.y + dy;
+
+          if(!inside(nx,ny)){
+            continue;
+          }
+
+          if(getPieceAt(nx,ny)){
+            continue;
+          }
+          
+          const fieldHere =
+            fields.find(
+              f =>
+                f.x === nx &&
+                f.y === ny
+            );
+
+          if(fieldHere){
+            continue;
+          }
+
+          candidates.push({
+            x:nx,
+            y:ny
+          });
+        }
+      }
+
+      if(candidates.length === 0){
+        return;
+      }
+      
+      const target =
+        candidates[
+        Math.floor(
+          Math.random()
+          * candidates.length
+        )
+        ];
+
+      piece.x = target.x;
+      piece.y = target.y;
     }
-  }
-}
+    
+    function applyRestField(piece){
+      
+      if(piece.restTurns <= 0){
+        piece.restTurns = 1;
+      }
+    }
+    
+    function createRadiusField(
+      piece,
+      radius,
+      type
+    ){
+      
+      for(let dx=-radius;dx<=radius;dx++){
+
+        for(let dy=-radius;dy<=radius;dy++){
+
+          const x = piece.x + dx;
+          const y = piece.y + dy;
+          
+          if(!inside(x,y)){
+
+            continue;
+          
+          }
+
+          fields.push({
+            type,
+            x,
+            y
+          });
+        }
+      }
+    }
+
+    function createCrossField(
+      piece,
+      range,
+      type
+    ){
+
+      for(let i=-range;i<=range;i++){
+
+        const x1 = piece.x + i;
+        const y1 = piece.y;
+        
+        if(inside(x1,y1)){
+
+          fields.push({
+            type,
+            x:x1,
+            y:y1
+          });
+        }
+
+        const x2 = piece.x;
+        const y2 = piece.y + i;
+
+        if(inside(x2,y2)){
+
+          fields.push({
+            type,
+            x:x2,
+            y:y2
+          });
+        }
+      }
+    }
 
 document
 .getElementById("resetBtn")
