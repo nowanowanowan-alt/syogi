@@ -235,7 +235,8 @@ function createDraftUI(){
     btn.addEventListener("click",()=>{
 
       selectDraftPiece(type);
-
+      
+      )
     };
 
 // 現在ドラフト中か
