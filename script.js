@@ -238,7 +238,7 @@ function createDraftUI(){
 
       selectDraftPiece(type);
       
-    })
+    }))
     };
 
 // 現在ドラフト中か
