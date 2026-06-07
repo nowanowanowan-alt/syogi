@@ -28,6 +28,34 @@ let skillPiece = null;
 
 let skillTargets = [];
 
+const START_SELECTABLE = [
+  "歩",
+  "銀",
+  "香",
+  "桂",
+  "角",
+  "飛",
+  "金",
+  "砲",
+  "姫",
+  "賢",
+]
+
+// 現在ドラフト中か
+let isDraftPhase = true;
+
+// 黒が選んだ駒
+let blackDraft = [];
+
+// 白が選んだ駒
+let whiteDraft = [];
+
+// 何個置いたか
+let placedCount = {
+  black:0,
+  white:0
+};
+
 function createPiece(data){
 
   return {
@@ -175,38 +203,6 @@ if(selectedPiece){
   }
 
 }
-  // ========================
-// 開始前ドラフトシステム
-// ========================
-
-// プレイヤーが最初に選べる駒一覧
-const START_SELECTABLE = [
-  "歩",
-  "銀",
-  "香",
-  "桂",
-  "角",
-  "飛",
-  "金",
-  "砲",
-  "姫",
-  "賢",
-]
-
-// 現在ドラフト中か
-let isDraftPhase = true;
-
-// 黒が選んだ駒
-let blackDraft = [];
-
-// 白が選んだ駒
-let whiteDraft = [];
-
-// 何個置いたか
-let placedCount = {
-  black:0,
-  white:0
-};
 
 // ドラフトUI作成
 function createDraftUI(){
@@ -434,19 +430,19 @@ function onCellClick(x,y){
   clickedPiece.team === currentTurn
   ){
 
-  if(clickedPiece.restTurns > 0){
+    if(clickedPiece.restTurns > 0){
+      alert("この駒は休み中");
+      return;
+    }
 
-    alert("この駒は休み中");
+    selectedPiece = clickedPiece;
+
+    render();
+    highlightMoves(clickedPiece);
+    showSkillButtons(clickedPiece);
+
     return;
   }
-
-  selectedPiece = clickedPiece;
-
-  render();
-  highlightMoves(clickedPiece);
-
-  return;
-}
 
   if(selectedPiece){
 
@@ -526,6 +522,7 @@ function handleSkillClick(x,y){
         ){
       finishSkill();
       break;
+      }
   }
 }
 
@@ -609,7 +606,7 @@ function endTurn(){
       }
     }
   }
-}
+
 
   updateFields();
 
@@ -799,6 +796,8 @@ function riderMoves(piece){
       x,
       y
     );
+  }
+  return result;
 }
 
 function isOnBuffField(piece){
@@ -1497,7 +1496,7 @@ function summonRider(
       "そのマスには置けません"
     );
 
-    return true;
+    return false;
   }
 
   pieces.push(
@@ -1519,24 +1518,7 @@ function summonRider(
 
   render();
 }
-  pieces.push(
 
-    createPiece({
-
-      type:"騎",
-
-      team:piece.team,
-
-      x,
-      y,
-
-      moveType:"rider"
-    })
-  );
-
-  piece.summonedCount++;
-}
-  
 function placeWiseField(
   piece,
   x,
