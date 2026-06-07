@@ -26,6 +26,8 @@ let skillMode = null;
 
 let skillPiece = null;
 
+let skillTargets = [];
+
 function createPiece(data){
 
   return {
@@ -399,7 +401,7 @@ function convertMoveType(type){
       return "princess";
 
     case "賢":
-      return "sage";
+      return "wise";
 
     case "王":
       return "king";
@@ -412,11 +414,14 @@ function convertMoveType(type){
   }
 }
 
-function onCellClick(x,y){// ========================
-// ドラフト配置処理
-// ========================
-
-if(isDraftPhase){
+function onCellClick(x,y){
+  
+  if(skillMode){
+    handleSkillClick(x,y);
+    return;
+  }
+  
+  if(isDraftPhase){
 
   const currentDraft =
   currentTurn === "black"
@@ -503,6 +508,70 @@ if(isDraftPhase){
     }
   }
 }
+
+function handleSkillClick(x,y){
+
+  switch(skillMode){
+
+    case "wiseWarp":
+
+      placeWiseField(
+        skillPiece,
+        x,
+        y,
+        "warpField"
+      );
+
+      finishSkill();
+
+      break;
+
+    case "wiseRest":
+
+      placeWiseField(
+        skillPiece,
+        x,
+        y,
+        "restField"
+      );
+
+      finishSkill();
+
+      break;
+
+    case "silverPawn2":
+
+      silverTargetClick(
+        x,
+        y,
+        ["歩","歩"]
+      );
+
+      break;
+
+    case "silverPawnLance":
+
+      silverTargetClick(
+        x,
+        y,
+        ["歩","香"]
+      );
+
+      break;
+  }
+}
+
+  function finishSkill(){
+
+    skillMode = null;
+
+    skillPiece = null;
+
+    skillTargets = [];
+
+    endTurn();
+  
+  }
 
 function movePiece(piece,x,y){
 
@@ -684,7 +753,7 @@ function generateMoves(piece){
     case "princess":
       return around(piece,2);
 
-    case "sage"
+    case "wise":
       return around(piece,2);
       
     case "king":
@@ -1112,25 +1181,53 @@ function updateFields(){
 
         addSkillButton(
           "ワープ配置",
-          ()=>skillMode="wiseWarp"
+          ()=>{
+
+            skillMode =
+              "wiseWarp";
+            
+            skillPiece =
+              selectedPiece;
+          }
         );
-        
+
         addSkillButton(
           "休み配置",
-          ()=>skillMode="wiseRest"
+          ()=>{
+
+            skillMode =
+              "wiseRest";
+
+            skillPiece =
+              selectedPiece;
+          }
         );
       }
 
       if(piece.type === "銀"){
         
         addSkillButton(
-          "歩×2に分身",
-          ()=>skillMode="silverPawn2"
-        );
+          "歩×2",
+          ()=>{
 
+            skillMode =
+              "silverPawn2";
+
+            skillPiece =
+              selectedPiece;
+          }
+        );
+        
         addSkillButton(
-          "歩＋香に分身",
-          ()=>skillMode="silverPawnLance"
+          "歩＋香",
+          ()=>{
+
+            skillMode =
+              "silverPawnLance";
+
+            skillPiece =
+              selectedPiece;
+          }
         );
       }
     }
@@ -1217,6 +1314,132 @@ function updateFields(){
         })
       );
     }
+
+function silverTargetClick(
+  x,
+  y,
+  spawnTypes
+){
+
+  const dx =
+  Math.abs(
+    x - skillPiece.x
+  );
+
+  const dy =
+  Math.abs(
+    y - skillPiece.y
+  );
+
+  if(
+    dx > 1 ||
+    dy > 1
+  ){
+
+    return;
+  }
+
+  if(getPieceAt(x,y)){
+
+    return;
+  }
+
+  skillTargets.push({
+    x,
+    y
+  });
+
+  if(
+    skillTargets.length < 2
+  ){
+
+    return;
+  }
+
+  removePiece(
+    skillPiece
+  );
+
+  for(
+    let i=0;
+    i<2;
+    i++
+  ){
+
+    pieces.push(
+
+      createPiece({
+
+        type:
+        spawnTypes[i],
+
+        team:
+        skillPiece.team,
+
+        x:
+        skillTargets[i].x,
+
+        y:
+        skillTargets[i].y,
+
+        moveType:
+        convertMoveType(
+          spawnTypes[i]
+        )
+      })
+    );
+  }
+
+  finishSkill();
+
+  render();
+}
+
+function placeWiseField(
+  piece,
+  x,
+  y,
+  fieldType
+){
+
+  if(piece.type !== "賢"){
+
+    return;
+  }
+
+  if(fieldType === "warpField"){
+
+    if(piece.warpFieldUses <= 0){
+
+      alert("ワープ設置回数切れ");
+      return;
+    }
+
+    piece.warpFieldUses--;
+
+  }else{
+
+    if(piece.restFieldUses <= 0){
+
+      alert("休み設置回数切れ");
+      return;
+    }
+
+    piece.restFieldUses--;
+  }
+
+  fields.push({
+
+    type:fieldType,
+
+    x,
+    y,
+
+    permanent:true
+  });
+
+  render();
+}
 
 document
 .getElementById("resetBtn")
