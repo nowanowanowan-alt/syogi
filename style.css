@@ -102,3 +102,7 @@ body{
 .piece-white{
   color:#ff7b72;
 }
+
+.skill-highlight{
+  background: orange !important;
+}
