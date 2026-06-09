@@ -1709,6 +1709,8 @@ function summonRider(
   piece.summonedCount++;
 
   render();
+
+  return true;
 }
 
 function placeWiseField(
