@@ -75,10 +75,16 @@ function createPiece(data){
     statuses:[],
 
     fields:[],
+
+    remainingActions:2,
     
     warpFieldUses:2,
     
     restFieldUses:2,
+    
+    bishopWarpUses:2,
+
+    bishopWarpReady:false,
 
     turnLife:null,
 
@@ -368,6 +374,27 @@ function convertMoveType(type){
 
 function onCellClick(x,y){
   
+  const bishopReady =
+    pieces.find(
+      p =>
+        p.type === "角" &&
+        p.team === currentTurn &&
+        p.bishopWarpReady
+    );
+
+  if(
+    bishopReady &&
+    clickedPiece &&
+    clickedPiece.id !== bishopReady.id
+  ){
+
+    alert(
+      "角の特殊スキル待機中"
+    );
+
+    return;
+  }
+  
   if(skillMode){
     handleSkillClick(x,y);
     return;
@@ -553,8 +580,16 @@ function movePiece(piece,x,y){
 
   piece.x = x;
   piece.y = y;
-
-  applyFieldEffects(piece);
+  
+  if(
+    piece.type === "角" &&
+    piece.bishopWarpReady
+  ){
+    bishopReturnWarp(piece);
+  }
+  else{
+    applyFieldEffects(piece);
+  }
 
   if(piece.type === "飛"){
 
@@ -565,7 +600,8 @@ function movePiece(piece,x,y){
       selectedPiece = piece;
 
       render();
-
+      highlightMoves(piece);
+      
       return;
     }
   }
@@ -704,25 +740,31 @@ function generateMoves(piece){
       return riderMoves(piece);
 
     case "bishop":
-
-      return [
-
-        ...orthogonal(piece,1),
-
-        ...diagonal(piece,2)
-      ];
+      return diagonal(piece,6);
 
     case "rook":
 
+      // 1回目
       if(piece.remainingActions === 2){
 
-        return orthogonal(piece,2);
+        return orthogonal(piece,4);
       }
 
-      return orthogonal(piece,4);
+      // 2回目（強化）
+      if(isOnBuffField(piece)){
 
+        return [
+
+          ...orthogonal(piece,2),
+          ...diagonal(piece,2)
+        ];
+      }
+
+  // 2回目（通常）
+  return orthogonal(piece,2);
+      
     case "gold":
-      return around(piece,3);
+      return goldMoves(piece);
     
     case "cannon":
       return orthogonal(piece,1);
@@ -797,6 +839,56 @@ function riderMoves(piece){
       y
     );
   }
+  return result;
+}
+
+function goldMoves(piece){
+
+  const result = [];
+
+  const normal = [
+    [-2,-3],[-1,-3],[1,-3],[2,-3],
+
+    [-2,-2],[-1,-2],[0,-2],[1,-2],[2,-2],
+
+    [-1,-1],[1,-1],
+
+    [-1,1],[1,1],
+
+    [-2,2],[-1,2],[0,2],[1,2],[2,2],
+
+    [-2,3],[-1,3],[1,3],[2,3]
+  ];
+
+  const buff = [
+    [-1,-1],[0,-1],[1,-1],
+    [-1,0],[1,0],
+    [-1,1],[0,1],[1,1]
+  ];
+
+  for(const [dx,dy] of normal){
+
+    addMove(
+      result,
+      piece,
+      piece.x + dx,
+      piece.y + dy
+    );
+  }
+
+  if(isOnBuffField(piece)){
+
+    for(const [dx,dy] of buff){
+
+      addMove(
+        result,
+        piece,
+        piece.x + dx,
+        piece.y + dy
+      );
+    }
+  }
+
   return result;
 }
 
@@ -1001,7 +1093,10 @@ function updateFields(){
       }
     }
 
-    if(piece.type === "角"){
+    if(
+      piece.type === "角" &&
+      isOnBuffField(piece)
+    ){
 
       createRadiusField(
         piece,
@@ -1082,6 +1177,9 @@ function updateFields(){
     }
 
     function applyWarpField(piece){
+      if(piece.type === "角"){
+        return;
+      }
 
       const candidates = [];
 
@@ -1136,7 +1234,10 @@ function updateFields(){
     
     function applyRestField(piece){
 
-      if(piece.type === "銀"){
+      if(piece.type === "銀" ||
+         piece.type === "角" ||
+         piece.type === "金"
+        ){
         return;
       }
       
@@ -1243,6 +1344,7 @@ function updateFields(){
           }
         );
       }
+      
       if(piece.type === "桂"){
 
         addSkillButton(
@@ -1254,6 +1356,30 @@ function updateFields(){
 
             skillPiece =
               piece;
+
+            highlightSkillTargets(piece);
+          }
+        );
+      }
+      
+      if(piece.type === "角"){
+
+        addSkillButton(
+          "帰還ワープ",
+          ()=>{
+
+            if(
+              piece.bishopWarpUses <= 0
+            ){
+              alert("使用回数切れ");
+              return;
+            }
+
+            piece.bishopWarpReady = true;
+
+            alert(
+              "次の行動後にワープ"
+            );
           }
         );
       }
@@ -1285,6 +1411,72 @@ function updateFields(){
         );
       }
     }
+
+function highlightSkillTargets(piece){
+
+  render();
+
+  const cells =
+  document.querySelectorAll(".cell");
+
+  // 桂
+  if(piece.type === "桂"){
+
+    const targetY =
+    piece.team === "black"
+    ? 8
+    : 0;
+
+    cells.forEach(cell=>{
+
+      const x =
+      Number(cell.dataset.x);
+
+      const y =
+      Number(cell.dataset.y);
+
+      if(y !== targetY){
+        return;
+      }
+
+      if(getPieceAt(x,y)){
+        return;
+      }
+
+      cell.classList.add("highlight");
+    });
+  }
+
+  if(piece.type === "銀"){
+
+    const targets =
+      around(piece,1);
+
+    targets.forEach(move=>{
+
+      cells.forEach(cell=>{
+
+        if(
+          Number(cell.dataset.x) === move.x &&
+          Number(cell.dataset.y) === move.y
+        ){
+
+          if(!getPieceAt(move.x,move.y)){
+            cell.classList.add("highlight");
+          }
+        }
+      });
+    });
+  }
+
+  if(piece.type === "賢"){
+    
+    cells.forEach(cell=>{
+
+    cell.classList.add("highlight");
+    });
+}
+}
     
     function addSkillButton(
       text,
@@ -1563,6 +1755,48 @@ function placeWiseField(
   });
 
   render();
+}
+
+function bishopReturnWarp(piece){
+
+  piece.bishopWarpReady = false;
+
+  piece.bishopWarpUses--;
+
+  alert(
+    "特殊スキルの効果によりワープ"
+  );
+
+  const targetY =
+  piece.team === "black"
+  ? 7
+  : 1;
+
+  const candidates = [];
+
+  for(let x=0;x<9;x++){
+
+    if(!getPieceAt(x,targetY)){
+
+      candidates.push(x);
+    }
+  }
+
+  if(candidates.length === 0){
+    return;
+  }
+
+  const randomX =
+
+  candidates[
+    Math.floor(
+      Math.random()
+      * candidates.length
+    )
+  ];
+
+  piece.x = randomX;
+  piece.y = targetY;
 }
 
 document
