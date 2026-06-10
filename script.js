@@ -82,9 +82,15 @@ function createPiece(data){
     
     restFieldUses:2,
     
+    rebellionFieldUses:2,
+  
     bishopWarpUses:2,
 
     bishopWarpReady:false,
+
+    controlledBy:null,
+    
+    controlTurns:0,
 
     turnLife:null,
 
@@ -518,6 +524,19 @@ function handleSkillClick(x,y){
 
       break;
 
+    case "wiseRebellion":
+
+      placeWiseField(
+        skillPiece,
+        x,
+        y,
+        "rebellionField"
+      );
+
+      finishSkill();
+
+      break;
+
     case "silverPawn2":
 
       silverTargetClick(
@@ -571,8 +590,8 @@ function movePiece(piece,x,y){
   getPieceAt(x,y);
 
   if(
-    target &&
-    target.team !== piece.team
+    clickedPiece &&
+    ownerOf(clickedPiece) === currentTurn
   ){
 
     capturePiece(piece,target);
@@ -641,6 +660,16 @@ function endTurn(){
         removePiece(p);
       }
     }
+    
+    if(p.controlTurns > 0){
+
+      p.controlTurns--;
+
+      if(p.controlTurns <= 0){
+
+        p.controlledBy = null;
+      }
+    }
   }
 
 
@@ -698,6 +727,14 @@ function getPieceAt(x,y){
 
   return pieces.find(
     p => p.x===x && p.y===y
+  );
+}
+
+function ownerOf(piece){
+
+  return (
+    piece.controlledBy ??
+    piece.team
   );
 }
 
@@ -1118,12 +1155,7 @@ function updateFields(){
     }
     
     if(piece.type === "砲"){
-      
-      createCrossField(
-        piece,
-        7,
-        "restField"
-      );
+      createCannonField(piece);
     }
 
     if(piece.type === "王"){
@@ -1135,178 +1167,275 @@ function updateFields(){
       );
     }
 
-    if(piece.type === "桂"){
+    if(piece.type === "玉"){
 
-      if(piece.killCount >= 1){
-
-        createRadiusField(
-
-          piece,
-
-          piece.killCount >= 2
-          ? 2
-          : 1,
-
-          "warpField"
-        );
-      }
+      createRebellionField(piece);
     }
   }
 }
     
-    function applyFieldEffects(piece){
+function applyFieldEffects(piece){
       
-      const field =
+  const field =
+    fields.find(
+      f =>
+        f.x === piece.x &&
+        f.y === piece.y
+    );
+      
+  if(!field){
+    return;
+  }
+
+  if(field.type === "warpField"){
+    applyWarpField(piece);
+  }
+
+  if(field.type === "restField"){
+    applyRestField(piece);
+  }
+
+  if(field.type === "rebellionField"){
+    applyRebellionField(piece);
+  }
+}
+
+function applyWarpField(piece){
+  if(piece.type === "角"){
+    return;
+  }
+
+  const candidates = [];
+
+  for(let dx=-3;dx<=3;dx++){
+
+    for(let dy=-3;dy<=3;dy++){
+
+      const nx = piece.x + dx;
+      const ny = piece.y + dy;
+
+      if(!inside(nx,ny)){
+        continue;
+      }
+
+      if(getPieceAt(nx,ny)){
+        continue;
+      }
+          
+      const fieldHere =
         fields.find(
           f =>
-            f.x === piece.x &&
-            f.y === piece.y
+            f.x === nx &&
+            f.y === ny
         );
-      
-      if(!field){
-        return;
+
+      if(fieldHere){
+        continue;
       }
 
-      if(field.type === "warpField"){
-        applyWarpField(piece);
-      }
-
-      if(field.type === "restField"){
-        applyRestField(piece);
-      }
+      candidates.push({
+        x:nx,
+        y:ny
+      });
     }
+  }
 
-    function applyWarpField(piece){
-      if(piece.type === "角"){
-        return;
-      }
-
-      const candidates = [];
-
-      for(let dx=-3;dx<=3;dx++){
-
-        for(let dy=-3;dy<=3;dy++){
-
-          const nx = piece.x + dx;
-          const ny = piece.y + dy;
-
-          if(!inside(nx,ny)){
-            continue;
-          }
-
-          if(getPieceAt(nx,ny)){
-            continue;
-          }
-          
-          const fieldHere =
-            fields.find(
-              f =>
-                f.x === nx &&
-                f.y === ny
-            );
-
-          if(fieldHere){
-            continue;
-          }
-
-          candidates.push({
-            x:nx,
-            y:ny
-          });
-        }
-      }
-
-      if(candidates.length === 0){
-        return;
-      }
-      
-      const target =
-        candidates[
-        Math.floor(
-          Math.random()
-          * candidates.length
-        )
-        ];
-
-      piece.x = target.x;
-      piece.y = target.y;
-    }
+  if(candidates.length === 0){
+    return;
+  }
     
-    function applyRestField(piece){
+  const target =
+    candidates[
+    Math.floor(
+      Math.random()
+      * candidates.length
+    )
+    ];
 
-      if(piece.type === "銀" ||
-         piece.type === "角" ||
-         piece.type === "金"
-        ){
-        return;
-      }
-      
-      if(piece.restTurns <= 0){
-        piece.restTurns = 1;
-      }
-    }
+  piece.x = target.x;
+  piece.y = target.y;
+}
     
-    function createRadiusField(
-      piece,
-      radius,
-      type
+function applyRestField(piece){
+  if(piece.type === "銀" ||
+     piece.type === "角" ||
+     piece.type === "金"
     ){
+    return;
+  }
       
-      for(let dx=-radius;dx<=radius;dx++){
+  if(piece.restTurns <= 0){
+    piece.restTurns = 1;
+  }
+}
+    
+function applyRebellionField(piece){
 
-        for(let dy=-radius;dy<=radius;dy++){
+  const field =
+  fields.find(
+    f =>
+      f.x === piece.x &&
+      f.y === piece.y &&
+      f.type === "rebellionField"
+  );
 
-          const x = piece.x + dx;
-          const y = piece.y + dy;
+  if(!field){
+    return;
+  }
+
+  if(field.team === piece.team){
+    return;
+  }
+
+  piece.controlledBy =
+  field.team;
+
+  piece.controlTurns = 1;
+}
+
+function createRadiusField(
+  piece,
+  radius,
+  type
+){
+      
+  for(let dx=-radius;dx<=radius;dx++){
+  for(let dy=-radius;dy<=radius;dy++){
+
+    const x = piece.x + dx;
+    const y = piece.y + dy;
           
-          if(!inside(x,y)){
+    if(!inside(x,y)){
 
-            continue;
+      continue;
           
-          }
-
-          fields.push({
-            type,
-            x,
-            y
-          });
-        }
-      }
     }
 
-    function createCrossField(
-      piece,
-      range,
-      type
-    ){
+    fields.push({
+      type,
+      x,
+      y 
+    });
+  }
+  }
+}
 
-      for(let i=-range;i<=range;i++){
+function createCrossField(
+  piece,
+  range,
+  type
+){
 
-        const x1 = piece.x + i;
-        const y1 = piece.y;
+  for(let i=-range;i<=range;i++){
+    
+    const x1 = piece.x + i;
+    const y1 = piece.y;
         
-        if(inside(x1,y1)){
+    if(inside(x1,y1)){
 
-          fields.push({
-            type,
-            x:x1,
-            y:y1
-          });
-        }
-
-        const x2 = piece.x;
-        const y2 = piece.y + i;
-
-        if(inside(x2,y2)){
-
-          fields.push({
-            type,
-            x:x2,
-            y:y2
-          });
-        }
-      }
+      fields.push({
+        type,
+        x:x1,
+        y:y1
+      });
     }
+
+    const x2 = piece.x;
+    const y2 = piece.y + i;
+
+    if(inside(x2,y2)){
+
+      fields.push({
+        type,
+        x:x2,
+        y:y2
+      });
+    }
+  }
+}
+
+function createCannonField(piece){
+
+  const dir =
+  piece.team === "black"
+  ? -1
+  : 1;
+
+  const pattern = [
+
+    [0,1],
+
+    [0,2],
+
+    [-1,3],[0,3],[1,3],
+
+    [-1,4],[0,4],[1,4],
+
+    [-2,5],[-1,5],[0,5],[1,5],[2,5],
+
+    [-1,6],[0,6],[1,6]
+  ];
+
+  if(isOnBuffField(piece)){
+
+    pattern.push(
+      [-2,4],[2,4],
+      [-2,3],[2,3]
+    );
+  }
+
+  for(const [dx,dy] of pattern){
+
+    const x = piece.x + dx;
+    const y = piece.y + dir * dy;
+
+    if(!inside(x,y)){
+      continue;
+    }
+
+    fields.push({
+      type:"restField",
+      x,
+      y
+    });
+  }
+}
+
+function createRebellionField(piece){
+
+  const dir =
+  piece.team === "black"
+  ? -1
+  : 1;
+
+  const pattern = [
+
+    [-1,1],[0,1],[1,1],
+
+    [-2,2],[-1,2],[0,2],[1,2],[2,2],
+
+    [-3,3],[-2,3],[-1,3],[0,3],[1,3],[2,3],[3,3],
+
+    [-2,4],[-1,4],[0,4],[1,4],[2,4],
+  ];
+
+  for(const [dx,dy] of pattern){
+
+    const x = piece.x + dx;
+    const y = piece.y + dir * dy;
+
+    if(!inside(x,y)){
+      continue;
+    }
+
+    fields.push({
+      type:"rebellionField",
+      x,
+      y,
+      team:piece.team
+    });
+  }
+}
     
 //スキル
     
@@ -1342,7 +1471,18 @@ function updateFields(){
             skillPiece =
               selectedPiece;
           }
-        );
+        ); 
+        
+        if(isOnBuffField(piece)){
+
+          addSkillButton(
+            "反逆配置",
+            ()=>{
+              skillMode = "wiseRebellion";
+              skillPiece = piece;
+            }
+          );
+        }
       }
       
       if(piece.type === "桂"){
@@ -1723,6 +1863,17 @@ function placeWiseField(
   if(piece.type !== "賢"){
 
     return;
+  }
+  
+  if(fieldType === "rebellionField"){
+
+    if(piece.rebellionFieldUses <= 0){
+
+      alert("反逆設置回数切れ");
+      return;
+    }
+
+    piece.rebellionFieldUses--;
   }
 
   if(fieldType === "warpField"){
