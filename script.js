@@ -11,6 +11,8 @@ document.getElementById("selectedInfo");
 
 let currentTurn = "black";
 
+let roundCount = 1;
+
 let selectedPiece = null;
 
 let pieces = [];
@@ -27,6 +29,13 @@ let skillMode = null;
 let skillPiece = null;
 
 let skillTargets = [];
+
+let kingRestLine = null;
+
+let kingRestRow = null;
+let kingRestCol = null;
+
+let wiseMoveAfterSkill = false;
 
 const START_SELECTABLE = [
   "歩",
@@ -75,6 +84,8 @@ function createPiece(data){
     statuses:[],
 
     fields:[],
+    
+    isSubstituteUsed:false,
 
     remainingActions:2,
     
@@ -140,11 +151,7 @@ pieces.push(
 );
 
   render();
-console.log("render終わり");
-  createDraftUI();
-  console.log("createDraftUI終わり");
-}
-
+  
 function render(){
 
   boardEl.innerHTML = "";
@@ -203,7 +210,8 @@ function render(){
       boardEl.appendChild(cell);
     }
   }
-if(selectedPiece){
+
+  if(selectedPiece){
 
     selectedInfo.textContent =
     `${selectedPiece.type}
@@ -458,6 +466,14 @@ function onCellClick(x,y){
   const clickedPiece =
   getPieceAt(x,y);
 
+  if(wiseMoveAfterSkill){
+
+    if(clickedPiece !== skillPiece){
+
+      return;
+    }
+  }
+
   if(
   clickedPiece &&
   clickedPiece.team === currentTurn
@@ -625,33 +641,73 @@ function movePiece(piece,x,y){
     }
   }
 
+  if(wiseMoveAfterSkill){
+
+    wiseMoveAfterSkill = false;
+
+    piece.canMoveAfterSkill = false;
+
+    endTurn();
+
+    return;
+  }
   endTurn();
 }
 
 function endTurn(){
+
+  const oldTurn =
+  currentTurn;
 
   currentTurn =
   currentTurn === "black"
   ? "white"
   : "black";
 
+  if(
+    oldTurn === "white" &&
+    currentTurn === "black"
+  ){
+
+    processRoundEnd();
+  }
+
   selectedPiece = null;
 
+  updateFields();
+
+  render();
+}
+
+function processRoundEnd(){
+
+  roundCount++;
+  
+  kingRestLine =
+    Math.floor(
+      Math.random()*9
+    );
+  
+  kingRestRow =
+    Math.floor(
+      Math.random()*9
+    );
+
+  kingRestCol =
+    Math.floor(
+      Math.random()*9
+    );
+  
   for(const p of pieces){
 
-    if(p.type === "飛"){
-
-      p.remainingActions = 2;
-      
-    }
-    
     if(p.restTurns > 0){
 
-    p.restTurns--;
-
+      p.restTurns--;
     }
 
-    if(p.turnLife !== null){
+    if(
+      p.turnLife !== null
+    ){
 
       p.turnLife--;
 
@@ -660,25 +716,28 @@ function endTurn(){
         removePiece(p);
       }
     }
-    
-    if(p.controlTurns > 0){
-
-      p.controlTurns--;
-
-      if(p.controlTurns <= 0){
-
-        p.controlledBy = null;
-      }
-    }
   }
+  fields = fields.filter(f=>{
 
+    if(f.duration === undefined){
 
-  updateFields();
+      return true;
+    }
 
-  render();
+    f.duration--;
+
+    return f.duration > 0;
+  });
 }
 
 function capturePiece(attacker,target){
+  const princess =
+    pieces.find(
+      p =>
+        p.team === target.team &&
+        p.type === "姫" &&
+        !p.isSubstituteUsed
+    );
 
   attacker.killCount++;
 
@@ -693,6 +752,17 @@ function capturePiece(attacker,target){
   
   if(target.type === "姫"){
     removePiece(attacker);
+  }
+  if(
+    princess &&
+    target.type !== "姫"
+  ){
+
+    princess.isSubstituteUsed = true;
+
+    removePiece(princess);
+
+    return;
   }
   
   removePiece(target);
@@ -798,7 +868,7 @@ function generateMoves(piece){
       }
 
   // 2回目（通常）
-  return orthogonal(piece,2);
+      return orthogonal(piece,2);
       
     case "gold":
       return goldMoves(piece);
@@ -807,16 +877,19 @@ function generateMoves(piece){
       return orthogonal(piece,1);
     
     case "princess":
-      return around(piece,2);
-
+      if(isOnBuffField(piece)){
+        return diagonal(piece,2);
+      }
+      return diagonal(piece,3);
+      
     case "wise":
       return around(piece,2);
       
     case "king":
-      return around(piece,2);
+      return orthogonal(piece,2);
 
     case "jewel":
-      return around(piece,3);
+      return orthogonal(piece,2);
 
     default:
       return [];
@@ -934,6 +1007,7 @@ function isOnBuffField(piece){
   return fields.some(
     f =>
       f.type === "buffField" &&
+      f.team === piece.team &&
       f.x === piece.x &&
       f.y === piece.y
   );
@@ -1122,7 +1196,7 @@ function updateFields(){
           fields.push({
 
             type:"buffField",
-
+            team:piece.team,
             x,
             y
           });
@@ -1163,8 +1237,45 @@ function updateFields(){
       createRadiusField(
         piece,
         1,
-        "restField"
+        "deathField"
       );
+      createKingWarpField(piece);
+    }
+    
+    if(kingRestLine !== null){
+
+      for(let x=0;x<9;x++){
+
+        fields.push({
+
+          type:"restField",
+          x,
+          y:kingRestLine
+        });
+      }
+      
+      if(isOnBuffField(piece)){
+
+        for(let x=0;x<9;x++){
+
+          fields.push({
+  
+            type:"restField",
+            x,
+            y:kingRestRow
+          });
+        }
+
+        for(let y=0;y<9;y++){
+
+          fields.push({
+      
+            type:"restField",
+            x:kingRestCol,
+            y
+          });
+        }
+      }
     }
 
     if(piece.type === "玉"){
@@ -1182,6 +1293,11 @@ function applyFieldEffects(piece){
         f.x === piece.x &&
         f.y === piece.y
     );
+  
+  if(piece.type === "姫"){
+    reflectFieldEffects(piece);
+    return;
+  }
       
   if(!field){
     return;
@@ -1198,10 +1314,19 @@ function applyFieldEffects(piece){
   if(field.type === "rebellionField"){
     applyRebellionField(piece);
   }
+
+  if(field.type === "deathField"){
+    applyDeathField(
+      piece,
+      field
+    );
+  }
 }
 
 function applyWarpField(piece){
-  if(piece.type === "角"){
+  if(piece.type === "角" ||
+     piece.type === "王"
+    ){
     return;
   }
 
@@ -1259,7 +1384,8 @@ function applyWarpField(piece){
 function applyRestField(piece){
   if(piece.type === "銀" ||
      piece.type === "角" ||
-     piece.type === "金"
+     piece.type === "金" ||
+     piece.type === "王"
     ){
     return;
   }
@@ -1278,6 +1404,13 @@ function applyRebellionField(piece){
       f.y === piece.y &&
       f.type === "rebellionField"
   );
+  
+  if(
+    piece.type === "王" ||
+    piece.type === "賢"
+  ){
+    return;
+  }
 
   if(!field){
     return;
@@ -1291,6 +1424,65 @@ function applyRebellionField(piece){
   field.team;
 
   piece.controlTurns = 1;
+}
+
+function applyDeathField(piece){
+
+  if(piece.type === "王" ||
+     piece.type === "姫"
+    ){
+    return;
+  }
+
+  if(
+    piece.team === field.team
+    ){
+    return;
+  }
+
+  removePiece(piece);
+
+  checkWinner();
+}
+
+function reflectFieldEffects(princess){
+
+  const field =
+  fields.find(
+    f =>
+      f.x === princess.x &&
+      f.y === princess.y
+  );
+
+  if(!field){
+    return;
+  }
+
+  if(field.type === "rebelField"){
+    return;
+  }
+
+  for(const piece of pieces){
+
+    if(piece.team === princess.team){
+      continue;
+    }
+
+    if(field.type === "warpField"){
+
+      applyWarpField(piece);
+    }
+
+    if(field.type === "restField"){
+
+      applyRestField(piece);
+    }
+
+    if(field.type === "rebelField"){
+
+      applyRebelField(piece);
+    }
+  }
 }
 
 function createRadiusField(
@@ -1313,6 +1505,7 @@ function createRadiusField(
 
     fields.push({
       type,
+      team:piece.team,
       x,
       y 
     });
@@ -1398,6 +1591,36 @@ function createCannonField(piece){
       x,
       y
     });
+  }
+}
+
+function createKingWarpField(piece){
+
+  for(let i=1;i<=3;i++){
+
+    addField(
+      piece.x+i,
+      piece.y+i,
+      "warpField"
+    );
+
+    addField(
+      piece.x+i,
+      piece.y-i,
+      "warpField"
+    );
+
+    addField(
+      piece.x-i,
+      piece.y+i,
+      "warpField"
+    );
+
+    addField(
+      piece.x-i,
+      piece.y-i,
+      "warpField"
+    );
   }
 }
 
@@ -1910,6 +2133,17 @@ function placeWiseField(
   render();
 }
 
+  function finishWiseFieldSkill(){
+
+    skillMode = null;
+    
+    skillPiece.canMoveAfterSkill = true;
+
+    wiseMoveAfterSkill = true;
+
+    render();
+  }
+
 function bishopReturnWarp(piece){
 
   piece.bishopWarpReady = false;
@@ -1958,7 +2192,5 @@ document
   "click",
   setupGame
 );
-
-console.log(typeof createDraftUI);
 
 setupGame();
