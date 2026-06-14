@@ -830,6 +830,28 @@ function endTurn(){
 
 function processRoundEnd(){
 
+  const king =
+
+    pieces.find(p=>p.type==="王");
+
+  if(king){
+
+    kingRestLine=Math.floor(Math.random()*9);
+
+    kingRestRow=Math.floor(Math.random()*9);
+
+    kingRestCol=Math.floor(Math.random()*9);
+
+  }else{
+
+    kingRestLine=null;
+
+    kingRestRow=null;
+
+    kingRestCol=null;
+
+  }
+
   roundCount++;
   
   kingRestLine =
@@ -847,7 +869,7 @@ function processRoundEnd(){
       Math.random()*9
     );
   
-  for(const p of pieces){
+  for(const p of [...pieces]){
 
     if(p.restTurns > 0){
 
@@ -907,15 +929,6 @@ function capturePiece(attacker,target){
     );
 
   attacker.killCount++;
-
-  if(attacker.type === "玉"){
-
-    target.team = attacker.team;
-
-    target.converted = true;
-    
-    return;
-  }
   
   if(target.type === "姫"){
     removePiece(attacker);
@@ -1200,7 +1213,7 @@ function around(piece,range){
 
       if(
         !target ||
-        target.team !== piece.team
+        ownerOf(target)!==ownerOf(piece)
       ){
 
         result.push({
@@ -1307,7 +1320,7 @@ function addMove(
 
   if(
     !target ||
-    target.team !== piece.team
+    ownerOf(target)!==ownerOf(piece)
   ){
 
     result.push({x,y});
@@ -1499,12 +1512,13 @@ function updateWiseBuff(){
 
 function applyFieldEffects(piece){
       
-  const field =
-    fields.find(
-      f =>
-        f.x === piece.x &&
-        f.y === piece.y
-    );
+  const fieldList =
+
+    fields.filter(
+
+    f=>f.x===piece.x&&f.y===piece.y
+
+);
   
   if(piece.type === "姫"){
     reflectFieldEffects(piece);
@@ -1515,20 +1529,23 @@ function applyFieldEffects(piece){
     return;
   }
 
-  if(field.type === "warpField"){
-    applyWarpField(piece,field);
-  }
+  for(const field of fieldList){
+    
+    if(field.type === "warpField"){
+      applyWarpField(piece,field);
+    }
 
-  if(field.type === "restField"){
-    applyRestField(piece,field);
-  }
+    if(field.type === "restField"){
+      applyRestField(piece,field);
+    }
 
-  if(field.type === "rebellionField"){
-    applyRebellionField(piece,field);
-  }
+    if(field.type === "rebellionField"){
+      applyRebellionField(piece,field);
+    }
 
-  if(field.type === "deathField"){
-    applyDeathField(piece,field);
+    if(field.type === "deathField"){
+      applyDeathField(piece,field);
+    }
   }
 }
 
@@ -1678,7 +1695,7 @@ function reflectFieldEffects(princess){
     return;
   }
 
-  for(const piece of pieces){
+  for(const piece of [...pieces]){
 
     if(piece.team === princess.team){
       continue;
