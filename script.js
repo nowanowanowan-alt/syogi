@@ -450,15 +450,12 @@ function placeDraftPiece(type,x,y,team){
     }
 
     if(draftRound >= 4){
-
+      
       isDraftPhase = false;
-
+      document.getElementById("draftUI").style.display = "none";
       currentTurn = "black";
-
       alert("ゲーム開始！");
-
       render();
-
       return;
     }
   }
@@ -818,12 +815,12 @@ function endTurn(){
     updateWiseBuff();
   }
   
-  for(const p of pieces){
-    if(p.type==="飛"){
-      p.remainingActions=2;
+  for(const piece of pieces){
+    if(piece.type==="飛"){
+        piece.remainingActions=2;
     }
   }
-
+  
   selectedPiece = null;
 
   updateFields();
@@ -866,6 +863,16 @@ function processRoundEnd(){
       if(p.turnLife <= 0){
 
         removePiece(p);
+      }
+    }
+    
+    if(p.controlTurns>0){
+
+      p.controlTurns--;
+
+      if(p.controlTurns===0){
+
+        p.controlledBy=null;
       }
     }
   }
@@ -1498,26 +1505,28 @@ function applyFieldEffects(piece){
   }
 
   if(field.type === "warpField"){
-    applyWarpField(piece);
+    applyWarpField(piece,field);
   }
 
   if(field.type === "restField"){
-    applyRestField(piece);
+    applyRestField(piece,field);
   }
 
   if(field.type === "rebellionField"){
-    applyRebellionField(piece);
+    applyRebellionField(piece,field);
   }
 
   if(field.type === "deathField"){
-    applyDeathField(
-      piece,
-      field
-    );
+    applyDeathField(piece,field);
   }
 }
 
-function applyWarpField(piece){
+function applyWarpField(piece,field){
+
+  if(field.team===piece.team){
+    return;
+  }
+
   if(piece.type === "角" ||
      piece.type === "王"
     ){
@@ -1575,7 +1584,12 @@ function applyWarpField(piece){
   piece.y = target.y;
 }
     
-function applyRestField(piece){
+function applyRestField(piece,field){ 
+  
+  if(field.team===piece.team){
+    return;
+  }
+  
   if(piece.type === "銀" ||
      piece.type === "角" ||
      piece.type === "金" ||
@@ -1583,13 +1597,14 @@ function applyRestField(piece){
     ){
     return;
   }
+ 
       
   if(piece.restTurns <= 0){
     piece.restTurns = 1;
   }
 }
     
-function applyRebellionField(piece){
+function applyRebellionField(piece,field){
 
   const field =
   fields.find(
@@ -1598,6 +1613,10 @@ function applyRebellionField(piece){
       f.y === piece.y &&
       f.type === "rebellionField"
   );
+  
+  if(field.team===piece.team){
+    return;
+  }
   
   if(
     piece.type === "王" ||
@@ -1620,7 +1639,7 @@ function applyRebellionField(piece){
   piece.controlTurns = 1;
 }
 
-function applyDeathField(piece){
+function applyDeathField(piece,field){
 
   if(piece.type === "王" ||
      piece.type === "姫"
@@ -1652,7 +1671,7 @@ function reflectFieldEffects(princess){
     return;
   }
 
-  if(field.type === "rebelField"){
+  if(field.type === "rebellionField"){
     return;
   }
 
@@ -1664,17 +1683,17 @@ function reflectFieldEffects(princess){
 
     if(field.type === "warpField"){
 
-      applyWarpField(piece);
+      applyWarpField(piece,field);
     }
 
     if(field.type === "restField"){
 
-      applyRestField(piece);
+      applyRestField(piece,field);
     }
 
-    if(field.type === "rebelField"){
+    if(field.type === "rebellionField"){
 
-      applyRebelField(piece);
+      applyRebellionField(piece,field);
     }
   }
 }
@@ -1705,6 +1724,22 @@ function createRadiusField(
     });
   }
   }
+}
+
+function addField(x,y,type,team,duration){
+
+  if(!inside(x,y)){
+    return;
+  }
+
+  fields.push({
+    type,
+    team,
+    x,
+    y,
+    duration
+  });
+
 }
 
 function createCrossField(
@@ -1782,6 +1817,7 @@ function createCannonField(piece){
 
     fields.push({
       type:"restField",
+      team:piece.team,
       x,
       y
     });
@@ -1795,25 +1831,29 @@ function createKingWarpField(piece){
     addField(
       piece.x+i,
       piece.y+i,
-      "warpField"
+      "warpField",
+      piece.team
     );
 
     addField(
       piece.x+i,
       piece.y-i,
-      "warpField"
+      "warpField",
+      piece.team
     );
 
     addField(
       piece.x-i,
       piece.y+i,
-      "warpField"
+      "warpField",
+      piece.team
     );
 
     addField(
       piece.x-i,
       piece.y-i,
-      "warpField"
+      "warpField",
+      piece.team
     );
   }
 }
@@ -2358,9 +2398,7 @@ function placeWiseField(
   fields.push({
 
     type:fieldType,
-
     team:piece.team,
-
     x,
     y,
 
