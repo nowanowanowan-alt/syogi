@@ -298,7 +298,7 @@ function showDraftChoices(){
   ];
 
   const choices =
-  getDraftChoices();
+  getCurrentDraftChoices();
 
   const area =
   document
@@ -333,58 +333,15 @@ function showDraftChoices(){
   `${player} のピック`;
 }
   
-function getDraftChoices(){
+function pickDraftPiece(player,type){
 
-  const pool =
-  [...draftPool];
+  selectedDraftPiece = type;
 
-  const result = [];
+  placingDraftPiece = true;
 
-  while(
-    result.length < 3
-  ){
+  currentTurn = player;
 
-    const index =
-    Math.floor(
-      Math.random()
-      * pool.length
-    );
-
-    result.push(
-      pool.splice(index,1)[0]
-    );
-  }
-
-  return result;
-}
-  
-function pickDraftPiece(
-  player,
-  type
-){
-
-  if(player==="black"){
-
-    blackDraft.push(type);
-
-  }else{
-
-    whiteDraft.push(type);
-  }
-
-  draftPickIndex++;
-
-  if(
-    draftPickIndex >=
-    draftOrder.length
-  ){
-
-    finishDraft();
-
-    return;
-  }
-
-  showDraftChoices();
+  render();
 }
   
 function getCurrentDraftChoices(){
@@ -421,40 +378,54 @@ function getCurrentDraftChoices(){
   return [];
 }
 
-function placeDraftPiece(type,x,y){
+function placeDraftPiece(type,x,y,team){
 
   pieces.push(
 
     createPiece({
 
       type,
-      team:currentTurn,
+
+      team,
+
       x,
+
       y,
+
       moveType:
       convertMoveType(type)
     })
   );
 
-  placedCount[currentTurn]++;
+  placingDraftPiece = false;
+  selectedDraftPiece = null;
 
-  // 3個置いたら交代
-  if(placedCount[currentTurn] >= 3){
+  draftPickIndex++;
 
-    if(currentTurn === "black"){
+  if(draftPickIndex >= draftOrder.length){
 
-      currentTurn = "white";
+    draftPickIndex = 0;
 
-      alert("白のターン");
-    }
-    else{
+    draftRound++;
+
+    if(draftRound >= 4){
 
       isDraftPhase = false;
 
       currentTurn = "black";
 
       alert("ゲーム開始！");
+
+      render();
+
+      return;
     }
+  }
+
+  render();
+
+  showDraftChoices();
+}
     
 function canPlaceDraftPiece(
   x,
@@ -485,6 +456,26 @@ function finishDraft(){
   );
 
   render();
+}
+
+function randomThree(array){
+
+  const pool = [...array];
+
+  const result = [];
+
+  while(result.length < 3){
+
+    const index = Math.floor(
+      Math.random() * pool.length
+    );
+
+    result.push(
+      pool.splice(index,1)[0]
+    );
+  }
+
+  return result;
 }
     
 //========================
@@ -569,52 +560,27 @@ function onCellClick(x,y){
   
   if(isDraftPhase){
 
-  const currentDraft =
-  currentTurn === "black"
-  ? blackDraft
-  : whiteDraft;
-
-  if(
-    currentDraft.length >
-    placedCount[currentTurn]
-  ){
-
-    // 黒は下3段
-    if(
-      currentTurn === "black" &&
-      y < 6
-    ){
-
-      alert("黒は下3段に置く");
+    if(!placingDraftPiece){
       return;
-    }
-
-    // 白は上3段
-    if(
-      currentTurn === "white" &&
-      y > 2
-    ){
-
-      alert("白は上3段に置く");
+  }
+    
+    if(!canPlaceDraftPiece(x,y)){
       return;
-    }
+  }
 
-    // 重複配置禁止
     if(getPieceAt(x,y)){
-
       return;
     }
 
-    const type =
-    currentDraft[
-      placedCount[currentTurn]
-    ];
-
-    placeDraftPiece(type,x,y);
+    placeDraftPiece(
+      selectedDraftPiece,
+      x,
+      y,
+      currentTurn
+    );
 
     return;
   }
-}
 
   const clickedPiece =
   getPieceAt(x,y);
