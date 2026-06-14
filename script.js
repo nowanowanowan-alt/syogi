@@ -876,17 +876,22 @@ function processRoundEnd(){
       }
     }
   }
-  fields = fields.filter(f=>{
+  
+  for(const piece of pieces){
 
-    if(f.duration === undefined){
+    if(piece.type !== "賢") continue;
 
-      return true;
-    }
+    piece.fields = piece.fields.filter(f=>{
 
-    f.duration--;
+        if(f.duration===undefined) return true;
 
-    return f.duration > 0;
-  });
+        f.duration--;
+
+        return f.duration>0;
+
+    });
+
+  };
 }
 
 function capturePiece(attacker,target){
@@ -1443,6 +1448,12 @@ function updateFields(){
       createRebellionField(piece);
     }
   }
+
+  for(const piece of pieces){
+
+   if(piece.type !== "賢") continue;
+   fields.push(...piece.fields);
+ }
 }
 
 function updateWiseBuff(){
@@ -2387,7 +2398,7 @@ function placeWiseField(
     piece.restFieldUses--;
   }
 
-  fields.push({
+  piece.fields.push({
 
     type:fieldType,
     team:piece.team,
