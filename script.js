@@ -294,7 +294,10 @@ function startDraft(){
     getCurrentDraftChoices();
 
   draftPickIndex = 0;
-
+  
+  placingDraftPiece = false;
+  selectedDraftPiece = null;
+  
   draftOrder = [
 
     "black",
@@ -348,7 +351,7 @@ function showDraftChoices(){
   });
 
   turnDisplay.textContent =
-  `${player} のピック`;
+    `第${draftRound}ラウンド　${player} のピック`;
 }
   
 function pickDraftPiece(player,type){
@@ -467,20 +470,6 @@ function canPlaceDraftPiece(
     ? y===7
     : y===1;
 }
-  
-function finishDraft(){
-
-  isDraftPhase = true;
-
-  currentTurn =
-  "black";
-
-  alert(
-    "配置フェーズ開始"
-  );
-
-  render();
-}
 
 function randomThree(array){
 
@@ -556,6 +545,9 @@ function convertMoveType(type){
 
 function onCellClick(x,y){
   
+  const clickedPiece =
+  getPieceAt(x,y);
+
   const bishopReady =
     pieces.find(
       p =>
@@ -605,9 +597,6 @@ function onCellClick(x,y){
 
     return;
   }
-
-  const clickedPiece =
-  getPieceAt(x,y);
 
   if(wiseMoveAfterSkill){
 
