@@ -289,28 +289,46 @@ function startDraft(){
   whiteDraft = [];
   
   draftRound = 1;
-  
-  currentDraftChoices =
-    getCurrentDraftChoices();
-
   draftPickIndex = 0;
   
   placingDraftPiece = false;
   selectedDraftPiece = null;
+
+  setDraftOrder();
   
-  draftOrder = [
-
-    "black",
-    "white",
-    "black",
-    "white",
-    "white",
-    "black"
-  ];
-
+  currentDraftChoices =
+    getCurrentDraftChoices();
+  
   showDraftChoices();
 }
-  
+
+function setDraftOrder(){
+
+  if(draftRound === 1){
+
+    draftOrder = [
+      "black",
+      "white"
+    ];
+  }
+
+  else if(draftRound === 2){
+
+    draftOrder = [
+      "black",
+      "white"
+    ];
+  }
+
+  else{
+
+    draftOrder = [
+      "white",
+      "black"
+    ];
+  }
+}
+
 function showDraftChoices(){
 
   const player =
@@ -406,13 +424,9 @@ function placeDraftPiece(type,x,y,team){
     createPiece({
 
       type,
-
       team,
-
       x,
-
       y,
-
       moveType:
       convertMoveType(type)
     })
@@ -430,7 +444,8 @@ function placeDraftPiece(type,x,y,team){
     draftRound++;
 
     if(draftRound < 4){
-
+      
+      setDraftOrder();
       currentDraftChoices =
         getCurrentDraftChoices();
     }
