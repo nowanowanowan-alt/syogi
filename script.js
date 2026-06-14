@@ -1605,14 +1605,6 @@ function applyRestField(piece,field){
 }
     
 function applyRebellionField(piece,field){
-
-  const field =
-  fields.find(
-    f =>
-      f.x === piece.x &&
-      f.y === piece.y &&
-      f.type === "rebellionField"
-  );
   
   if(field.team===piece.team){
     return;
