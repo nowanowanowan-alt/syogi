@@ -236,7 +236,7 @@ function render(){
 
         cell.classList.add(
 
-          piece.team === "black"
+          ownerOf(piece) === "black"
           ? "piece-black"
           : "piece-white"
         );
@@ -261,13 +261,6 @@ function render(){
 
     selectedInfo.textContent = "なし";
   }
-  
-  cell.classList.add(
-    ownerOf(piece)==="black"
-    ? "piece-black"
-    : "piece-white"
-  );
-
 }
 
 document
