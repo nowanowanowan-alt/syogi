@@ -266,7 +266,7 @@ document
 .getElementById("startBtn")
 .onclick=startDraft;
 
-/========================
+//========================
 // ドラフト
 //========================
 
@@ -1329,7 +1329,11 @@ function highlightMoves(piece){
     });
   });
 }
-
+    
+//========================
+// フィールド
+//========================
+    
 function updateFields(){
 
   fields = [];
@@ -1850,8 +1854,10 @@ function createRebellionField(piece){
   }
 }
     
-//スキル
-
+//========================
+// 特殊スキル
+//========================
+    
 function showSkillButtons(piece){
 
   const area =
