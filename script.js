@@ -88,6 +88,8 @@ let blackFrontCount = 0;
 
 let whiteFrontCount = 0;
 
+let currentDraftChoices = [];
+
 const SILVER_GACHA = [
 
   {type:"歩",weight:10},
@@ -264,7 +266,18 @@ function render(){
 
 document
 .getElementById("startBtn")
-.onclick=startDraft;
+.onclick=()=>{
+
+  document
+  .getElementById("startBtn")
+  .style.display="none";
+
+  document
+  .getElementById("draftUI")
+  .style.display="block";
+
+  startDraft();
+};
 
 //========================
 // ドラフト
@@ -274,6 +287,11 @@ function startDraft(){
 
   blackDraft = [];
   whiteDraft = [];
+  
+  draftRound = 1;
+  
+  currentDraftChoices =
+    getCurrentDraftChoices();
 
   draftPickIndex = 0;
 
@@ -298,7 +316,7 @@ function showDraftChoices(){
   ];
 
   const choices =
-  getCurrentDraftChoices();
+    currentDraftChoices;
 
   const area =
   document
@@ -407,6 +425,12 @@ function placeDraftPiece(type,x,y,team){
     draftPickIndex = 0;
 
     draftRound++;
+
+    if(draftRound < 4){
+
+      currentDraftChoices =
+        getCurrentDraftChoices();
+    }
 
     if(draftRound >= 4){
 
