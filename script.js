@@ -261,6 +261,12 @@ function render(){
 
     selectedInfo.textContent = "なし";
   }
+  
+  cell.classList.add(
+    ownerOf(piece)==="black"
+    ? "piece-black"
+    : "piece-white"
+  );
 
 }
 
@@ -670,7 +676,7 @@ function handleSkillClick(x,y){
         "warpField"
       );
 
-      finishSkill();
+      finishWiseFieldSkill();
 
       break;
 
@@ -683,7 +689,7 @@ function handleSkillClick(x,y){
         "restField"
       );
 
-      finishSkill();
+      finishWiseFieldSkill();
 
       break;
 
@@ -696,7 +702,7 @@ function handleSkillClick(x,y){
         "rebellionField"
       );
 
-      finishSkill();
+      finishWiseFieldSkill();
 
       break;
 
@@ -749,16 +755,14 @@ function handleSkillClick(x,y){
 
 function movePiece(piece,x,y){
 
-  const target =
-  getPieceAt(x,y);
+  const target = getPieceAt(x,y);
 
-  if(
-    clickedPiece &&
-    ownerOf(clickedPiece) === currentTurn
-  ){
-
-    capturePiece(piece,target);
-  }
+ if(
+   target &&
+   ownerOf(target)!==ownerOf(piece)
+ ){
+   capturePiece(piece,target);
+ }
 
   piece.x = x;
   piece.y = y;
@@ -820,6 +824,12 @@ function endTurn(){
     
     updateWiseBuff();
   }
+  
+  for(const p of pieces){
+    if(p.type==="飛"){
+      p.remainingActions=2;
+    }
+  }
 
   selectedPiece = null;
 
@@ -880,6 +890,9 @@ function processRoundEnd(){
 }
 
 function capturePiece(attacker,target){
+  if(!target){
+    return;
+  }
   const princess =
     pieces.find(
       p =>
@@ -2353,10 +2366,15 @@ function placeWiseField(
 
     type:fieldType,
 
+    team:piece.team,
+
     x,
     y,
 
-    permanent:true
+    duration:
+      fieldType==="rebellionField"
+      ?1
+      :undefined
   });
 
   render();
