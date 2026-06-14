@@ -37,7 +37,28 @@ let kingRestCol = null;
 
 let wiseMoveAfterSkill = false;
 
-const START_SELECTABLE = [
+const FRONT_DRAFT_1 = [
+  "歩",
+  "角",
+  "桂"
+];
+
+const BACK_DRAFT = [
+  "香",
+  "砲",
+  "姫",
+  "賢"
+];
+
+const FRONT_DRAFT_2 = [
+  "銀",
+  "桂",
+  "飛",
+  "金"
+];
+
+let draftPool = [
+
   "歩",
   "銀",
   "香",
@@ -47,23 +68,31 @@ const START_SELECTABLE = [
   "金",
   "砲",
   "姫",
-  "賢",
-]
+  "賢"
 
-// 現在ドラフト中か
-let isDraftPhase = true;
+];
 
-// 黒が選んだ駒
-let blackDraft = [];
+let draftOrder = [];
 
-// 白が選んだ駒
-let whiteDraft = [];
+let draftPickIndex = 0;
 
-// 何個置いたか
-let placedCount = {
-  black:0,
-  white:0
-};
+let draftRound = 1;
+
+const SILVER_GACHA = [
+
+  {type:"歩",weight:10},
+  {type:"香",weight:10},
+  {type:"角",weight:10},
+  {type:"桂",weight:10},
+  {type:"飛",weight:10},
+  {type:"金",weight:10},
+  {type:"砲",weight:10},
+  {type:"姫",weight:10},
+  {type:"賢",weight:10},
+
+  {type:"王",weight:5},
+  {type:"玉",weight:5}
+];
 
 function createPiece(data){
 
@@ -110,7 +139,6 @@ function createPiece(data){
 }
 
 function setupGame(){
-console.log("setupGame開始");
   pieces = [];
 
   fields = [];
@@ -150,7 +178,7 @@ pieces.push(
   })
 );
 
-  render();
+  render();}
   
 function render(){
 
@@ -224,115 +252,193 @@ function render(){
 
 }
 
-// ドラフトUI作成
-function createDraftUI(){
+document
+.getElementById("startDraftBtn")
+.addEventListener(
+  "click",
+  startDraft
+);
 
-  const side =
-  document.querySelector(".side");
+function startDraft(){
 
-  const draftDiv =
-  document.createElement("div");
+  blackDraft = [];
+  whiteDraft = [];
 
-  draftDiv.id = "draftUI";
+  draftPickIndex = 0;
 
-  draftDiv.innerHTML = `
-    <h2>駒選択</h2>
-    <div id="draftButtons"></div>
-  `;
+  draftOrder = [
 
-  side.prepend(draftDiv);
+    "black",
+    "white",
+    "black",
 
-  const buttons =
-  document.getElementById("draftButtons");
+    "white",
+    "white",
 
-  START_SELECTABLE.forEach(type=>{
+    "black"
+  ];
+
+  showDraftChoices();
+}
+  
+function showDraftChoices(){
+
+  const player =
+  draftOrder[
+    draftPickIndex
+  ];
+
+  const choices =
+  getDraftChoices();
+
+  const area =
+  document
+  .getElementById(
+    "draftButtons"
+  );
+
+  area.innerHTML = "";
+
+  choices.forEach(type=>{
 
     const btn =
-    document.createElement("button");
+    document.createElement(
+      "button"
+    );
 
-    btn.textContent = type;
+    btn.textContent =
+    type;
 
-    btn.addEventListener("click",()=>{
+    btn.onclick = ()=>{
 
-      selectDraftPiece(type);
-      
-    });
-  buttons.appendChild(btn);
-  })
-    }
+      pickDraftPiece(
+        player,
+        type
+      );
+    };
 
+    area.appendChild(btn);
+  });
 
-// 駒選択
-function selectDraftPiece(type){
+  turnDisplay.textContent =
+  `${player} のピック`;
+}
+  
+function getDraftChoices(){
 
-  if(!isDraftPhase){
+  const pool =
+  [...draftPool];
 
-    return;
-  }
+  const result = [];
 
-  const currentDraft =
-  currentTurn === "black"
-  ? blackDraft
-  : whiteDraft;
+  while(
+    result.length < 3
+  ){
 
-  if(currentDraft.length >= 3){
+    const index =
+    Math.floor(
+      Math.random()
+      * pool.length
+    );
 
-    return;
-  }
-
-  currentDraft.push(type);
-
-  alert(
-    `${currentTurn} が ${type} を選択`
-  );
-
-  if(currentDraft.length >= 3){
-
-    alert(
-      `${currentTurn} は配置してください`
+    result.push(
+      pool.splice(index,1)[0]
     );
   }
+
+  return result;
+}
+  
+function pickDraftPiece(
+  player,
+  type
+){
+
+  if(player==="black"){
+
+    blackDraft.push(type);
+
+  }else{
+
+    whiteDraft.push(type);
+  }
+
+  draftPickIndex++;
+
+  if(
+    draftPickIndex >=
+    draftOrder.length
+  ){
+
+    finishDraft();
+
+    return;
+  }
+
+  showDraftChoices();
+}
+  
+function getCurrentDraftChoices(){
+
+  if(draftRound === 1){
+
+    return [
+      "歩",
+      "角",
+      "桂"
+    ];
+  }
+
+  if(draftRound === 2){
+
+    return randomThree([
+      "香",
+      "砲",
+      "姫",
+      "賢"
+    ]);
+  }
+
+  if(draftRound === 3){
+
+    return randomThree([
+      "銀",
+      "桂",
+      "飛",
+      "金"
+    ]);
+  }
+
+  return [];
 }
 
-// ドラフト配置
-function placeDraftPiece(type,x,y){
+function canPlaceDraftPiece(
+  x,
+  y
+){
 
-  pieces.push(
+  if(draftRound === 2){
 
-    createPiece({
-
-      type,
-
-      team:currentTurn,
-
-      x,
-      y,
-
-      moveType:
-      convertMoveType(type)
-    })
-  );
-
-  placedCount[currentTurn]++;
-
-  // 3個置いたら交代
-  if(placedCount[currentTurn] >= 3){
-
-    if(currentTurn === "black"){
-
-      currentTurn = "white";
-
-      alert("白のターン");
-    }
-    else{
-
-      isDraftPhase = false;
-
-      currentTurn = "black";
-
-      alert("ゲーム開始！");
-    }
+    return currentTurn==="black"
+      ? y===8
+      : y===0;
   }
+
+  return currentTurn==="black"
+    ? y===7
+    : y===1;
+}
+  
+function finishDraft(){
+
+  isDraftPhase = true;
+
+  currentTurn =
+  "black";
+
+  alert(
+    "配置フェーズ開始"
+  );
 
   render();
 }
@@ -670,6 +776,8 @@ function endTurn(){
   ){
 
     processRoundEnd();
+    
+    updateWiseBuff();
   }
 
   selectedPiece = null;
@@ -826,12 +934,6 @@ function generateMoves(piece){
       return pawnMoves(piece);
 
     case "silver":
-      if(isOnBuffField(piece)){
-        return[
-          ...orthogonal(piece,4),
-          ...diagonal(piece,4)
-        ];
-      }
       return orthogonal(piece,3);
 
     case "lance":
@@ -878,9 +980,9 @@ function generateMoves(piece){
     
     case "princess":
       if(isOnBuffField(piece)){
-        return diagonal(piece,2);
+        return diagonal(piece,3);
       }
-      return diagonal(piece,3);
+      return diagonal(piece,2);
       
     case "wise":
       return around(piece,2);
@@ -1284,7 +1386,48 @@ function updateFields(){
     }
   }
 }
-    
+
+function updateWiseBuff(){
+
+  const allies =
+  pieces.filter(
+    p => p.type !== "賢"
+  );
+
+  const wisePieces =
+  pieces.filter(
+    p => p.type === "賢"
+  );
+
+  for(const wise of wisePieces){
+
+    const teamAllies =
+    allies.filter(
+      p => p.team === wise.team
+    );
+
+    if(teamAllies.length===0){
+      continue;
+    }
+
+    const target =
+    teamAllies[
+      Math.floor(
+        Math.random()
+        * teamAllies.length
+      )
+    ];
+
+    fields.push({
+      type:"buffField",
+      team:wise.team,
+      x:target.x,
+      y:target.y,
+      duration:1
+    });
+  }
+}
+
 function applyFieldEffects(piece){
       
   const field =
@@ -1661,119 +1804,158 @@ function createRebellionField(piece){
 }
     
 //スキル
-    
-    function showSkillButtons(piece){
 
-      const area =
+function showSkillButtons(piece){
+
+  const area =
   
-        document.getElementById("skillArea");
+    document.getElementById("skillArea");
 
-      area.innerHTML = "";
+  area.innerHTML = "";
 
-      if(piece.type === "賢"){
+  if(piece.type === "賢"){
 
-        addSkillButton(
-          "ワープ配置",
-          ()=>{
+    addSkillButton(
+      "ワープ配置",
+      ()=>{
 
-            skillMode =
-              "wiseWarp";
+        skillMode =
+          "wiseWarp";
             
-            skillPiece =
-              selectedPiece;
-          }
-        );
+        skillPiece =
+          selectedPiece;
+      }
+    );
 
-        addSkillButton(
-          "休み配置",
-          ()=>{
+    addSkillButton(
+      "休み配置",
+      ()=>{
 
-            skillMode =
-              "wiseRest";
+        skillMode =
+          "wiseRest";
 
-            skillPiece =
-              selectedPiece;
-          }
-        ); 
+        skillPiece =
+          selectedPiece;
+      }
+    ); 
         
-        if(isOnBuffField(piece)){
+    if(isOnBuffField(piece)){
 
-          addSkillButton(
-            "反逆配置",
-            ()=>{
-              skillMode = "wiseRebellion";
-              skillPiece = piece;
-            }
-          );
+      addSkillButton(
+        "反逆配置",
+        ()=>{
+          skillMode = "wiseRebellion";
+          skillPiece = piece;
         }
-      }
-      
-      if(piece.type === "桂"){
-
-        addSkillButton(
-          "騎召喚",
-          ()=>{
-
-            skillMode =
-              "summonRider";
-
-            skillPiece =
-              piece;
-
-            highlightSkillTargets(piece);
-          }
-        );
-      }
-      
-      if(piece.type === "角"){
-
-        addSkillButton(
-          "帰還ワープ",
-          ()=>{
-
-            if(
-              piece.bishopWarpUses <= 0
-            ){
-              alert("使用回数切れ");
-              return;
-            }
-
-            piece.bishopWarpReady = true;
-
-            alert(
-              "次の行動後にワープ"
-            );
-          }
-        );
-      }
-
-      if(piece.type === "銀"){
-        
-        addSkillButton(
-          "歩×2",
-          ()=>{
-
-            skillMode =
-              "silverPawn2";
-
-            skillPiece =
-              selectedPiece;
-          }
-        );
-        
-        addSkillButton(
-          "歩＋香",
-          ()=>{
-
-            skillMode =
-              "silverPawnLance";
-
-            skillPiece =
-              selectedPiece;
-          }
-        );
-      }
+      );
     }
+  }
+      
+  if(piece.type === "桂"){
+    addSkillButton(
+      "騎召喚",
+      ()=>{
+
+        skillMode =
+          "summonRider";
+
+        skillPiece =
+          piece;
+
+        highlightSkillTargets(piece);
+      }
+    );
+  }
+      
+  if(piece.type === "角"){
+
+    addSkillButton(
+      "帰還ワープ",
+      ()=>{
+
+        if(
+          piece.bishopWarpUses <= 0
+        ){
+          alert("使用回数切れ");
+          return;
+        }
+
+        piece.bishopWarpReady = true;
+
+        alert(
+          "次の行動後にワープ"
+        );
+      }
+    );
+  }
+
+  if(piece.type === "銀"){
+        
+    addSkillButton(
+      "歩×2",
+      ()=>{
+
+        skillMode =
+          "silverPawn2";
+
+        skillPiece =
+          selectedPiece;
+      }
+    );
+        
+    addSkillButton(
+      "歩＋香",
+      ()=>{
+
+        skillMode =
+          "silverPawnLance";
+
+        skillPiece =
+          selectedPiece;
+      }
+    );
+  }
+}
+
+
+function rollSilverUnit(){
+
+  const total =
+  SILVER_GACHA.reduce(
+    (a,b)=>a+b.weight,
+    0
+  );
+
+  let r =
+  Math.random()*total;
+
+  for(const item of SILVER_GACHA){
+
+    r -= item.weight;
+
+    if(r<=0){
+      return item.type;
+    }
+  }
+
+  return "歩";
+}
+
+function useBuffedSilverSkill(){
+
+  const randomType =
+  rollSilverUnit();
+
+  skillMode =
+  "silverBuff";
+
+  skillTargets = [];
+
+  skillSpawnTypes = [
+    "歩",
+    randomType
+  ];
+}
 
 function highlightSkillTargets(piece){
 
