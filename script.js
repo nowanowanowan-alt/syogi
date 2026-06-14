@@ -72,11 +72,21 @@ let draftPool = [
 
 ];
 
+let draftRound = 1;
+
 let draftOrder = [];
 
-let draftPickIndex = 0;
+let draftTurn = 0;
 
-let draftRound = 1;
+let currentChoices = [];
+
+let selectedDraftPiece = null;
+
+let placingDraftPiece = false;
+
+let blackFrontCount = 0;
+
+let whiteFrontCount = 0;
 
 const SILVER_GACHA = [
 
@@ -253,11 +263,12 @@ function render(){
 }
 
 document
-.getElementById("startDraftBtn")
-.addEventListener(
-  "click",
-  startDraft
-);
+.getElementById("startBtn")
+.onclick=startDraft;
+
+/========================
+// ドラフト
+//========================
 
 function startDraft(){
 
@@ -271,10 +282,8 @@ function startDraft(){
     "black",
     "white",
     "black",
-
     "white",
     "white",
-
     "black"
   ];
 
@@ -412,6 +421,41 @@ function getCurrentDraftChoices(){
   return [];
 }
 
+function placeDraftPiece(type,x,y){
+
+  pieces.push(
+
+    createPiece({
+
+      type,
+      team:currentTurn,
+      x,
+      y,
+      moveType:
+      convertMoveType(type)
+    })
+  );
+
+  placedCount[currentTurn]++;
+
+  // 3個置いたら交代
+  if(placedCount[currentTurn] >= 3){
+
+    if(currentTurn === "black"){
+
+      currentTurn = "white";
+
+      alert("白のターン");
+    }
+    else{
+
+      isDraftPhase = false;
+
+      currentTurn = "black";
+
+      alert("ゲーム開始！");
+    }
+    
 function canPlaceDraftPiece(
   x,
   y
@@ -442,8 +486,11 @@ function finishDraft(){
 
   render();
 }
-
-// moveType変換
+    
+//========================
+// 通常ゲーム
+//========================
+    
 function convertMoveType(type){
 
   switch(type){
