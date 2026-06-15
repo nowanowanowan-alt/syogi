@@ -30,11 +30,6 @@ let skillPiece = null;
 
 let skillTargets = [];
 
-let kingRestLine = null;
-
-let kingRestRow = null;
-let kingRestCol = null;
-
 let wiseMoveAfterSkill = false;
 
 const FRONT_DRAFT_1 = [
@@ -1906,6 +1901,50 @@ function createKingWarpField(piece){
   }
 }
 
+function createKingRestField(piece){
+
+    const first =
+
+        Math.floor(Math.random()*9);
+
+    const columns = [first];
+
+    if(piece.isBuffed){
+
+        let second;
+
+        do{
+
+            second = Math.floor(Math.random()*9);
+
+        }while(second===first);
+
+        columns.push(second);
+
+    }
+
+    for(const col of columns){
+
+        for(let y=0;y<9;y++){
+
+            fields.push({
+
+                type:"restField",
+
+                team:piece.team,
+
+                x:col,
+
+                y
+
+            });
+
+        }
+
+    }
+
+}
+
 function createRebellionField(piece){
 
   const dir =
@@ -1940,6 +1979,18 @@ function createRebellionField(piece){
       team:piece.team
     });
   }
+if(isBuffed(piece)){
+
+    createRadiusField(
+
+        piece,
+
+        1,
+
+        "rebellionField"
+
+    );
+}
 }
     
 //========================
