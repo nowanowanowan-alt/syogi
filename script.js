@@ -760,14 +760,36 @@ function movePiece(piece,x,y){
   piece.y = y;
   
   if(
-    piece.type === "角" &&
-    piece.bishopWarpReady
-  ){
+
+  piece.type === "角" &&
+
+  piece.bishopWarpReady
+
+){
+
+  render();   // 一旦移動した姿を表示
+
+  setTimeout(()=>{
+
     bishopReturnWarp(piece);
-  }
-  else{
-    applyFieldEffects(piece);
-  }
+
+    render(); // 帰還後を表示
+
+    setTimeout(()=>{
+
+      endTurn();
+
+    },400);
+
+  },400);
+
+  return;
+
+}else{
+
+  applyFieldEffects(piece);
+
+}
 
   if(piece.type === "飛"){
 
@@ -1462,47 +1484,54 @@ function updateFields(){
 
 function updateWiseBuff(){
 
+  // 全員の強化をリセット
+
   for(const p of pieces){
-    p.wiseBuff=false;
+
+    p.wiseBuff = false;
+
   }
 
-  const allies =
-  pieces.filter(
-    p => p.type !== "賢"
-  );
-
   const wisePieces =
-  pieces.filter(
-    p => p.type === "賢"
-  );
+
+    pieces.filter(p => p.type === "賢");
 
   for(const wise of wisePieces){
 
-    const teamAllies =
-    allies.filter(
-      p => p.team === wise.team
-    );
+    const allies =
 
-    if(teamAllies.length===0){
+      pieces.filter(
+
+        p =>
+
+          p.team === wise.team &&
+
+          p.type !== "賢"
+
+      );
+
+    if(allies.length === 0){
+
       continue;
+
     }
 
     const target =
-    teamAllies[
-      Math.floor(
-        Math.random()
-        * teamAllies.length
-      )
-    ];
 
-    fields.push({
-      type:"buffField",
-      team:wise.team,
-      x:target.x,
-      y:target.y,
-      duration:1
-    });
+      allies[
+
+        Math.floor(
+
+          Math.random()*allies.length
+
+        )
+
+      ];
+
+    target.wiseBuff = true;
+
   }
+
 }
 
 function isBuffed(piece){
@@ -2497,6 +2526,8 @@ function bishopReturnWarp(piece){
 
   piece.x = randomX;
   piece.y = targetY;
+
+  applyFieldEffects(piece);
 }
 
 document
