@@ -758,6 +758,26 @@ function movePiece(piece,x,y){
 
   piece.x = x;
   piece.y = y;
+
+if(piece.type==="王"){
+
+    kingRestLine = Math.floor(Math.random()*9);
+
+    if(isBuffed(piece)){
+
+        kingRestRow = Math.floor(Math.random()*9);
+
+    }
+
+    else{
+
+        kingRestRow = null;
+
+    }
+
+    updateFields();
+
+}
   
   if(
 
@@ -854,44 +874,7 @@ function endTurn(){
 
 function processRoundEnd(){
 
-  const king =
-
-    pieces.find(p=>p.type==="王");
-
-  if(king){
-
-    kingRestLine=Math.floor(Math.random()*9);
-
-    kingRestRow=Math.floor(Math.random()*9);
-
-    kingRestCol=Math.floor(Math.random()*9);
-
-  }else{
-
-    kingRestLine=null;
-
-    kingRestRow=null;
-
-    kingRestCol=null;
-
-  }
-
   roundCount++;
-  
-  kingRestLine =
-    Math.floor(
-      Math.random()*9
-    );
-  
-  kingRestRow =
-    Math.floor(
-      Math.random()*9
-    );
-
-  kingRestCol =
-    Math.floor(
-      Math.random()*9
-    );
   
   for(const p of [...pieces]){
 
@@ -922,6 +905,7 @@ function processRoundEnd(){
       }
     }
   }
+}
   
   for(const piece of pieces){
 
@@ -938,7 +922,7 @@ function processRoundEnd(){
     });
 
   };
-}
+
 
 function capturePiece(attacker,target){
   if(!target){
