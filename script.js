@@ -140,6 +140,8 @@ function createPiece(data){
 
     bishopWarpReady:false,
 
+    wiseBuff:false,
+
     controlledBy:null,
     
     controlTurns:0,
@@ -1012,7 +1014,7 @@ function generateMoves(piece){
       return orthogonal(piece,1);
 
     case "knight":
-      if(isOnBuffField(piece)){
+      if(isBuffed(piece)){
         return orthogonal(piece,2);
       }
       return orthogonal(piece,1);
@@ -1032,7 +1034,7 @@ function generateMoves(piece){
       }
 
       // 2回目（強化）
-      if(isOnBuffField(piece)){
+      if(isBuffed(piece)){
 
         return [
 
@@ -1051,7 +1053,7 @@ function generateMoves(piece){
       return orthogonal(piece,1);
     
     case "princess":
-      if(isOnBuffField(piece)){
+      if(isBuffed(piece)){
         return diagonal(piece,3);
       }
       return diagonal(piece,2);
@@ -1075,7 +1077,7 @@ function pawnMoves(piece){
   let effectiveKills =
   piece.killCount;
 
-  if(isOnBuffField(piece)){
+  if(isBuffed(piece)){
 
     effectiveKills++;
   }
@@ -1160,7 +1162,7 @@ function goldMoves(piece){
     );
   }
 
-  if(isOnBuffField(piece)){
+  if(isBuffed(piece)){
 
     for(const [dx,dy] of buff){
 
@@ -1174,17 +1176,6 @@ function goldMoves(piece){
   }
 
   return result;
-}
-
-function isOnBuffField(piece){
-
-  return fields.some(
-    f =>
-      f.type === "buffField" &&
-      f.team === piece.team &&
-      f.x === piece.x &&
-      f.y === piece.y
-  );
 }
     
 function around(piece,range){
@@ -1384,7 +1375,7 @@ function updateFields(){
 
     if(
       piece.type === "角" &&
-      isOnBuffField(piece)
+      isBuffed(piece)
     ){
 
       createRadiusField(
@@ -1396,7 +1387,7 @@ function updateFields(){
     
     if(
       piece.type === "騎" &&
-      isOnBuffField(piece)
+      isBuffed(piece)
     ){
 
       createRadiusField(
@@ -1432,7 +1423,7 @@ function updateFields(){
         });
       }
       
-      if(isOnBuffField(piece)){
+      if(isBuffed(piece)){
 
         for(let x=0;x<9;x++){
 
@@ -1471,6 +1462,10 @@ function updateFields(){
 
 function updateWiseBuff(){
 
+  for(const p of pieces){
+    p.wiseBuff=false;
+  }
+
   const allies =
   pieces.filter(
     p => p.type !== "賢"
@@ -1508,6 +1503,26 @@ function updateWiseBuff(){
       duration:1
     });
   }
+}
+
+function isBuffed(piece){
+
+    if(piece.wiseBuff){
+
+        return true;
+
+    }
+
+    return pieces.some(
+
+        p=>
+
+            p.type==="香" &&
+
+            p.team===piece.team
+
+    );
+
 }
 
 function applyFieldEffects(piece){
@@ -1818,7 +1833,7 @@ function createCannonField(piece){
     [-1,6],[0,6],[1,6]
   ];
 
-  if(isOnBuffField(piece)){
+  if(isBuffed(piece)){
 
     pattern.push(
       [-2,4],[2,4],
@@ -1952,7 +1967,7 @@ function showSkillButtons(piece){
       }
     ); 
         
-    if(isOnBuffField(piece)){
+    if(isBuffed(piece)){
 
       addSkillButton(
         "反逆配置",
