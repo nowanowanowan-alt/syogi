@@ -229,7 +229,27 @@ function render(){
 
       if(piece){
 
-        cell.textContent = piece.type;
+        cell.innerHTML = `
+
+<div class="piece ${ownerOf(piece)}">
+
+  <div class="badge-top"></div>
+
+  <div class="piece-body">${piece.type}</div>
+
+  <div class="badge-bottom"></div>
+
+</div>
+
+`;
+
+        cell.innerHTML = "";
+
+        const span = document.createElement("span");
+
+        span.textContent = piece.type;
+
+        cell.appendChild(span);
 
         cell.classList.add(
 
@@ -258,6 +278,53 @@ function render(){
 
     selectedInfo.textContent = "なし";
   }
+
+  if(piece.restTurns>0){
+
+    cell.classList.add("resting");
+
+    const badge=document.createElement("div");
+
+    badge.className="restBadge";
+
+    badge.textContent=
+
+    "🚫"+piece.restTurns;
+
+    cell.appendChild(badge);
+
+  }
+
+  if(piece.controlTurns>0){
+
+    cell.classList.add("controlled");
+
+    const badge=document.createElement("div");
+
+    badge.className="controlBadge";
+
+    badge.textContent=piece.controlTurns;
+
+    cell.appendChild(badge);
+  }
+
+  if(isBuffed(piece)){
+    const badge=document.createElement("div");
+
+    badge.className="buffBadge";
+
+    if(piece.type==="香"){
+
+      badge.textContent="⚔️";
+
+    }else{
+
+      badge.textContent=
+        "⚔️"+piece.buffTurns;
+    }
+  cell.appendChild(badge);
+  }
+
 }
 
 document
@@ -1345,6 +1412,16 @@ function highlightMoves(piece){
       }
     });
   });
+}
+
+function isBuffed(piece){
+
+    if(piece.type==="香"){
+
+        return true;
+    }
+
+    return piece.buffTurns>0;
 }
     
 //========================
