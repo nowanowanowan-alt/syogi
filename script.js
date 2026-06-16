@@ -268,17 +268,6 @@ function render(){
     }
   }
 
-  if(selectedPiece){
-
-    selectedInfo.textContent =
-    `${selectedPiece.type}
-    キル:${selectedPiece.killCount}`;
-
-  }else{
-
-    selectedInfo.textContent = "なし";
-  }
-
   if(piece.restTurns>0){
 
     cell.classList.add("resting");
@@ -681,24 +670,27 @@ function onCellClick(x,y){
     }
   }
 
-  if(
-  clickedPiece &&
-  clickedPiece.team === currentTurn
-  ){
-
-    if(clickedPiece.restTurns > 0){
-      alert("この駒は休み中");
-      return;
-    }
+  if(clickedPiece){
 
     selectedPiece = clickedPiece;
 
     render();
-    highlightMoves(clickedPiece);
-    showSkillButtons(clickedPiece);
+
+    if(ownerOf(clickedPiece)===currentTurn){
+
+        if(clickedPiece.restTurns===0){
+
+            highlightMoves(clickedPiece);
+            showSkillButtons(clickedPiece);
+
+        }else{
+
+            alert("この駒は休み中");
+        }
+    }
 
     return;
-  }
+}
 
   if(selectedPiece){
 
@@ -715,6 +707,227 @@ function onCellClick(x,y){
       movePiece(selectedPiece,x,y);
     }
   }
+}
+
+function updatePieceInfo(piece){
+
+    const info =
+    document.getElementById("pieceInfo");
+
+    if(!piece){
+
+        info.innerHTML="コマ未選択";
+        return;
+    }
+
+    info.innerHTML=
+`
+<h3>${piece.type}</h3>
+
+<b>状態</b><br>
+${getStatusText(piece)}
+
+<hr>
+
+<b>移動</b><br>
+${getMoveDescription(piece)}
+
+<hr>
+
+<b>スキル</b><br>
+${getSkillDescription(piece)}
+
+<hr>
+
+<b>特殊スキル</b><br>
+${getUniqueDescription(piece)}
+`;
+}
+
+function getStatusText(piece){
+
+    let text=[];
+
+    if(piece.restTurns>0){
+
+        text.push(
+        `🚫休み ${piece.restTurns}`);
+    }
+
+    if(piece.controlTurns>0){
+
+        text.push(
+        `🌀反逆 ${piece.controlTurns}`);
+    }
+
+    if(piece.buffTurns>0){
+
+        text.push(
+        `⚔️強化 ${piece.buffTurns}`);
+    }
+
+    if(piece.type=="香"){
+
+        text.push("⚔️全体強化");
+    }
+
+    if(text.length==0){
+
+        return "なし";
+    }
+
+    return text.join("<br>");
+}
+
+function getMoveDescription(piece){
+
+    switch(piece.type){
+
+        case "歩":
+
+            if(piece.killCount>=2){
+                return "周囲4マス";
+            }
+
+            if(piece.killCount===1){
+                return "上下左右4マス・斜め4マス";
+            }
+
+            return "上下左右3マス";
+
+        case "銀":
+            return "上下左右3マス";
+
+        case "香":
+            return "上下左右1マス";
+
+        case "桂":
+            return piece.buffTurns>0
+                ? "上下左右2マス"
+                : "上下左右1マス";
+
+        case "騎":
+            return "前方向好きなだけ";
+
+        case "角":
+            return "斜め6マス";
+
+        case "飛":
+            return "上下左右4→2マス(2回行動)";
+
+        case "金":
+            return piece.buffTurns>0
+                ? "通常＋周囲1マス"
+                : "特殊移動";
+
+        case "砲":
+            return "上下左右1マス";
+
+        case "姫":
+            return piece.buffTurns>0
+                ? "斜め3マス"
+                : "斜め2マス";
+
+        case "賢":
+            return "周囲2マス";
+
+        case "王":
+        case "玉":
+            return "上下左右2マス";
+    }
+
+    return "";
+}
+
+function getSkillDescription(piece){
+
+    switch(piece.type){
+
+        case "歩":
+            return "なし";
+
+        case "銀":
+            return "自分を歩×2 または 歩+香に変える";
+
+        case "香":
+            return "味方全員を強化";
+
+        case "桂":
+            return "騎を最大5体召喚";
+
+        case "騎":
+            return "なし";
+
+        case "角":
+            return "帰還ワープ";
+
+        case "飛":
+            return "2回行動";
+
+        case "金":
+            return "なし";
+
+        case "砲":
+            return "前方に休みフィールド";
+
+        case "姫":
+            return "フィールド反射";
+
+        case "賢":
+            return "ワープ・休み・反逆フィールド設置";
+
+        case "王":
+            return "周囲1マス即死";
+
+        case "玉":
+            return "前方に反逆フィールド";
+    }
+
+    return "なし";
+}
+
+function getUniqueDescription(piece){
+
+    switch(piece.type){
+
+        case "歩":
+            return "キル数で強化";
+
+        case "銀":
+            return "強化時：歩＋ランダム駒";
+
+        case "香":
+            return "常時：味方全員を強化";
+
+        case "桂":
+            return "召喚は最大5体";
+
+        case "角":
+            return "帰還ワープ2回";
+
+        case "飛":
+            return "2回目の移動が変化";
+
+        case "金":
+            return "強化時：周囲1マスも移動可能";
+
+        case "砲":
+            return "強化時：休み範囲拡大";
+
+        case "姫":
+            return "一度だけ味方の身代わり";
+
+        case "賢":
+            return "毎ターン味方1体をランダム強化";
+
+        case "王":
+            return "行動後ランダム1列休み（強化時2列）";
+
+        case "玉":
+            return "強化時：周囲1マスにも反逆";
+    }
+
+    return "なし";
 }
 
 function handleSkillClick(x,y){
