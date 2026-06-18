@@ -194,21 +194,26 @@ function render(){
         getPieceAt(x,y);
       if(piece){
         cell.innerHTML = `
+        <div class="piece-wrapper">
         <div class="piece ${ownerOf(piece)}">
-        <div class="badge-top"></div>
         <div class="piece-body">${piece.type}</div>
+        </div>
+        <div class="badge-top"></div>
         <div class="badge-bottom"></div>
         </div>
         `;
 
-        const pieceDiv=cell.querySelector(".piece");
+        const wrapper = cell.querySelector(".piece-wrapper");
+        const pieceDiv = wrapper.querySelector(".piece");
+        const topBadge = wrapper.querySelector(".badge-top");
+        const bottomBadge = wrapper.querySelector(".badge-bottom");
         if(piece.team==="white"){
           pieceDiv.style.transform="rotate(180deg)";
         }
         
         if(piece.restTurns>0){
           cell.classList.add("resting");
-          pieceDiv.querySelector(".badge-bottom").textContent=
+          bottomBadge.textContent=
             "🚫"+piece.restTurns;
         }
         
@@ -216,15 +221,15 @@ function render(){
         if(piece.controlTurns>0){
           cell.classList.add("controlled");
           rotation += 180;
-          pieceDiv.querySelector(".badge-bottom").textContent=
+          bottomBadge.textContent=
             "🌀"+piece.controlTurns;
         }
         pieceDiv.style.transform=`rotate(${rotation}deg)`;
         
         if(piece.type==="香"){
-          pieceDiv.querySelector(".badge-top").textContent="⚔️";
+          topBadge.textContent="⚔️";
         }else if(piece.buffTurns>0){
-          pieceDiv.querySelector(".badge-top").textContent=
+          topBadge.textContent=
             "⚔️"+piece.buffTurns;
         }
       }
