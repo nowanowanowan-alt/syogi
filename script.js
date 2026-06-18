@@ -150,84 +150,48 @@ pieces.push(
   render();}
   
 function render(){
-
   boardEl.innerHTML = "";
-
   turnDisplay.textContent =
-  `現在ターン: ${currentTurn}`;
-
+    `現在ターン: ${currentTurn}`;
   for(let y=0;y<BOARD_SIZE;y++){
-
     for(let x=0;x<BOARD_SIZE;x++){
-
       const cell =
-      document.createElement("div");
-
+        document.createElement("div");
       cell.className =
-      "cell " +
-      (
-        (x+y)%2===0
-        ? "dark"
-        : "light"
-      );
-
+        "cell " +
+        (
+          (x+y)%2===0
+          ? "dark"
+          : "light"
+        );
       cell.dataset.x = x;
       cell.dataset.y = y;
-
-      const fieldList =
-         fields.filter(
-            f=>f.x===x&&f.y===y
-          );
       
-      if(fieldList.length){
-        const types =
-          fieldList.map(f=>f.type);
-        let icon="";
-        
-        if(types.includes("deathField")){
-          icon+="☠️";
-        }
-        if(types.includes("restField")){
-          icon+="🚫";
-        }
-        if(types.includes("rebellionField")){
-          icon+="💫";
-        }
-        if(types.includes("warpField")){
-          icon+="🌀";
-        }
-        if(types.length >= 2){
-          cell.innerHTML+=`
-          <div class="fieldIcon">
-          ${icon}
-          </div>
-          `;
-        }
-
-    if(types.includes("warpField")){
-        cell.classList.add("warpField");
-    }
-
-    if(types.includes("restField")){
-        cell.classList.add("restField");
-    }
-
-    if(types.includes("rebellionField")){
-        cell.classList.add("rebellionField");
-    }
-
-    if(types.includes("deathField")){
-        cell.classList.add("deathField");
-    }
-
-    if(types.length>=2){
+      const fieldList =
+        fields.filter(f=>f.x===x&&f.y===y);
+      const types = fieldList.map(...)
+      
+      if(types.includes("warpField")){cell.classList.add("warpField");}
+      if(types.includes("restField")){cell.classList.add("restField");}
+      if(types.includes("rebellionField")){cell.classList.add("rebellionField");}
+      if(types.includes("deathField")){cell.classList.add("deathField");}
+      
+      if(fieldList.length >= 2){
+        let icon = "";
+        if(types.includes("deathField")){icon += "☠️";}
+        if(types.includes("restField")){icon += "🚫";}
+        if(types.includes("rebellionField")){icon += "💫";}
+        if(types.includes("warpField")){icon += "🌀";}
+        cell.innerHTML += `
+        <div class="fieldIcon">
+        ${icon}
+        </div>
+        `;
         cell.classList.add("multiField");
-    }
-}
-
+      }
+      
       const piece =
         getPieceAt(x,y);
-      
       if(piece){
         cell.innerHTML = `
         <div class="piece ${ownerOf(piece)}">
@@ -265,6 +229,12 @@ function render(){
         }
       }
       
+      if(fieldList.length >= 2){
+        cell.innerHTML += `
+        <div class="fieldIcon">
+        ${icon}
+        </div>`;
+      }
       if(
         selectedCell &&
         selectedCell.x===x &&
@@ -785,7 +755,7 @@ function movePiece(piece,x,y){
     },400);
     return;
   }else{
-    applyFieldEffects(piece);
+    updateFields(true);
   }
   
   if(piece.type === "飛"){
@@ -1399,20 +1369,20 @@ function updateFields(trigger=false){
       piece.type === "角" &&
       isBuffed(piece)
     ){
-      createRadiusField(piece,1,"warpField");
+      createRadiusField(piece,1,"warpField",trigger);
     }
     if(
       piece.type === "騎" &&
       isBuffed(piece)
     ){
-      createRadiusField(piece,1,"warpField");
+      createRadiusField(piece,1,"warpField",trigger);
     }
     if(piece.type === "砲"){
-      createCannonField(piece);
+      createCannonField(piece,trigger);
     }
     if(piece.type === "王"){
-      createRadiusField(piece,1,"deathField");
-      createKingWarpField(piece);
+      createRadiusField(piece,1,"deathField",trigger);
+      createKingWarpField(piece,trigger);
     }
     
     if(kingRestLine!==null && king){
@@ -1423,8 +1393,9 @@ function updateFields(trigger=false){
           x,
           y:kingRestLine
         };
-        fields.push(field);
-        triggerField(field);
+        fields.push(field);if(trigger){
+          triggerField(field);
+        }
       }
       if(isBuffed(king)){
         for(let x=0;x<9;x++){
@@ -1434,13 +1405,14 @@ function updateFields(trigger=false){
             x,
             y:kingRestRow
           };
-          fields.push(field);
-          triggerField(field);
+          fields.push(field);if(trigger){
+            triggerField(field);
+          }
         }
       }
     }
     if(piece.type === "玉"){
-      createRebellionField(piece);
+      createRebellionField(piece,trigger);
     }
   }
 }
@@ -1641,41 +1613,31 @@ function applyDeathField(piece,field){
 }
 
 function reflectFieldEffects(princess){
-
-  const list =
-    fields.filter(
-    f =>
-      f.x === princess.x &&
-      f.y === princess.y
+  const list = fields.filter(
+    f=>f.x===princess.x && f.y===princess.y
   );
-
-  if(fieldList.length===0){
+  if(list.length===0){
     return;
   }
-
-  if(field.type === "rebellionField"){
-    return;
-  }
-
-  for(const piece of [...pieces]){
-
-    if(piece.team === princess.team){
+  for(const field of list){
+    if(field.type==="rebellionField"){
       continue;
     }
-
-    if(field.type === "warpField"){
-
-      applyWarpField(piece,field);
-    }
-
-    if(field.type === "restField"){
-
-      applyRestField(piece,field);
-    }
-
-    if(field.type === "rebellionField"){
-
-      applyRebellionField(piece,field);
+    for(const piece of [...pieces]){
+      if(piece.team===princess.team){
+        continue;
+      }
+      switch(field.type){
+        case "warpField":
+          applyWarpField(piece,field);
+          break;
+        case "restField":
+          applyRestField(piece,field);
+          break;
+        case "deathField":
+          applyDeathField(piece,field);
+          break;
+      }
     }
   }
 }
@@ -1703,7 +1665,7 @@ function createRadiusField(piece,radius,type,trigger = false){
   }
 }
 
-function addField(x,y,type,team,duration,trigger = false){
+function addField(x,y,type,team,duration,trigger=false){
   if(!inside(x,y)){
     return;
   }
@@ -1716,7 +1678,7 @@ function addField(x,y,type,team,duration,trigger = false){
   }
 }
 
-function createCannonField(piece){
+function createCannonField(piece,trigger=false){
   const dir =
   piece.team === "black"
   ? -1
@@ -1748,7 +1710,7 @@ function createCannonField(piece){
   }
 }
 
-function createKingWarpField(piece){
+function createKingWarpField(piece,trigger=false){
   for(let i=1;i<=3;i++){
     addField(
       piece.x+i,
@@ -1777,7 +1739,7 @@ function createKingWarpField(piece){
   }
 }
 
-function createRebellionField(piece){
+function createRebellionField(piece,trigger=false){
   const dir =
     piece.team === "black"
     ? -1
@@ -2292,7 +2254,7 @@ function bishopReturnWarp(piece){
   ){
     capturePiece(piece,target);
   }
-  applyFieldEffects(piece);
+  updateFields(true);
 }
 
 //========================
