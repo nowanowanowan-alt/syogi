@@ -1757,8 +1757,8 @@ function applyDeathField(piece,field){
 
 function reflectFieldEffects(princess){
 
-  const field =
-  fields.find(
+  const list =
+    fields.filter(
     f =>
       f.x === princess.x &&
       f.y === princess.y
@@ -2542,7 +2542,7 @@ function getStatusText(piece){
         `🌀反逆 ${piece.controlTurns}`);
     }
 
-    if(piece.buffTurns>0){
+    if(isBuffed(piece)){
 
         text.push(
         `⚔️強化 ${piece.buffTurns}`);
@@ -2584,7 +2584,7 @@ function getMoveDescription(piece){
             return "たてよこ１";
 
         case "桂":
-            return piece.buffTurns>0
+            return isBuffed(piece)
                 ? "たてよこ２"
                 : "たてよこ１";
 
@@ -2595,22 +2595,22 @@ function getMoveDescription(piece){
             return "ななめ６";
 
         case "飛":
-            return piece.buffTurns>0
+            return isBuffed(piece)
                 ? "たてよこ４→たてよこななめ２(2回行動)"
                 : "たてよこ４→たてよこ２(2回行動)"; 
 
         case "金":
-            return piece.buffTurns>0
+            return isBuffed(piece)
                 ? "通常＋周囲１"
                 : "特殊移動";
 
         case "砲":
-            return piece.buffTurns>0
+            return isBuffed(piece)
                 ? "たてよこ２"
                 : "たてよこ１";
 
         case "姫":
-            return piece.buffTurns>0
+            return isBuffed(piece)
                 ? "ななめ３"
                 : "ななめ２";
 
@@ -2663,12 +2663,12 @@ function getSkillDescription(piece){
             return "反逆無効、毎ターンランダムな味方1体を強化";
 
         case "王":
-            return piece.buffTurns>0
+            return isBuffed(piece)
                 ? "ワープ・休み・即死無効、周囲１マスに即死フィールド、ななめ３マスにワープフィールド、行動後ランダムな２列に休みフィールド"
                 : "ワープ・休み・即死無効、周囲１マスに即死フィールド、ななめ３マスにワープフィールド、行動後ランダムな１列に休みフィールド";
 
         case "玉":
-            return piece.buffTurns>0
+            return isBuffed(piece)
                 ? "反逆無効、前方扇状・周囲１マスに反逆フィールド"
                 : "反逆無効、前方扇状に反逆フィールド";
     }
@@ -2684,7 +2684,7 @@ function getUniqueDescription(piece){
             return "なし";
 
         case "銀":
-            return piece.buffTurns>0
+            return isBuffed(piece)
                 ? "歩１体+ランダムなコマ１体に分身"
                 : "歩１体or歩１体+香１体に分身";
 
@@ -2710,7 +2710,7 @@ function getUniqueDescription(piece){
             return "なし";
 
         case "賢":
-            return piece.buffTurns>0
+            return isBuffed(piece)
                 ? "永続するワープ・休みフィールド(3回)、通常の反逆フィールド(1回)を任意のマス上に配置してから行動"
                 : "永続するワープ・休みフィールドを任意のマス上に配置してから行動(3回)";
 
