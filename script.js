@@ -202,7 +202,7 @@ if(types.includes("warpField")){
     icon+="🌀";
 }
 
-if(icon){
+if(types.length >= 2){
 
     cell.innerHTML+=`
 <div class="fieldIcon">
@@ -297,7 +297,7 @@ ${icon}
     }
   }
 
-  if(!selectedPiece){
+  if(!selectedPiece && !selectedCell){
     updatePieceInfo(null);
   }
   
@@ -652,18 +652,31 @@ function onCellClick(x,y){
       return;
     }
   }
+  
+  if(selectedPiece){
+
+    const moves = generateMoves(selectedPiece);
+
+    const canMove = moves.some(
+        m => m.x===x && m.y===y
+    );
+
+    if(canMove){
+        movePiece(selectedPiece,x,y);
+        return;
+    }
+}
 
   if(clickedPiece){
 
-    selectedPiece = clickedPiece;
-
-    selectedCell = null;
-
-    updatePieceInfo(clickedPiece);
-
-    render();
-
     if(ownerOf(clickedPiece)===currentTurn){
+
+        selectedPiece = clickedPiece;
+        selectedCell = null;
+
+        updatePieceInfo(clickedPiece);
+
+        render();
 
         if(clickedPiece.restTurns===0){
 
@@ -674,41 +687,28 @@ function onCellClick(x,y){
 
             alert("この駒は休み中");
         }
+
+        return;
     }
-
-    return;
 }
+  
+  if(!clickedPiece){
 
-if(!clickedPiece){
-
-    selectedPiece = null;
+    selectedCell = {x,y};
 
     updateFieldInfo(x,y);
 
     render();
+
+    return;
 }
-
-  if(selectedPiece){
-
-    const moves =
-    generateMoves(selectedPiece);
-
-    const valid =
-    moves.find(
-      m => m.x===x && m.y===y
-    );
-
-    if(valid){
-
-      movePiece(selectedPiece,x,y);
-    }
-  }  
   
-  selectedPiece = null;
-  selectedCell = {x,y};
-  updateFieldInfo(x,y);
-  render();
-  return;
+selectedPiece = null;
+selectedCell = {x,y};
+
+updateFieldInfo(x,y);
+
+render();
   
 }
 
