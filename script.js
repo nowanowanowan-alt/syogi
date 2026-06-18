@@ -2094,6 +2094,7 @@ addSkillButton(
     );
   }
 }
+}
 
 function rollSilverUnit(){
 
