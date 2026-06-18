@@ -176,8 +176,8 @@ function render(){
       if(types.includes("rebellionField")){cell.classList.add("rebellionField");}
       if(types.includes("deathField")){cell.classList.add("deathField");}
       
+      let icon = "";
       if(fieldList.length >= 2){
-        let icon = "";
         if(types.includes("deathField")){icon += "☠️";}
         if(types.includes("restField")){icon += "🚫";}
         if(types.includes("rebellionField")){icon += "💫";}
