@@ -178,38 +178,31 @@ function render(){
          fields.filter(
             f=>f.x===x&&f.y===y
           );
-
-if(fieldList.length){
-
-    const types =
-        fieldList.map(f=>f.type);
-
-let icon="";
-
-if(types.includes("deathField")){
-    icon+="☠️";
-}
-
-if(types.includes("restField")){
-    icon+="🚫";
-}
-
-if(types.includes("rebellionField")){
-    icon+="💫";
-}
-
-if(types.includes("warpField")){
-    icon+="🌀";
-}
-
-if(types.length >= 2){
-
-    cell.innerHTML+=`
-<div class="fieldIcon">
-${icon}
-</div>
-`;
-}
+      
+      if(fieldList.length){
+        const types =
+          fieldList.map(f=>f.type);
+        let icon="";
+        
+        if(types.includes("deathField")){
+          icon+="☠️";
+        }
+        if(types.includes("restField")){
+          icon+="🚫";
+        }
+        if(types.includes("rebellionField")){
+          icon+="💫";
+        }
+        if(types.includes("warpField")){
+          icon+="🌀";
+        }
+        if(types.length >= 2){
+          cell.innerHTML+=`
+          <div class="fieldIcon">
+          ${icon}
+          </div>
+          `;
+        }
 
     if(types.includes("warpField")){
         cell.classList.add("warpField");
@@ -233,46 +226,44 @@ ${icon}
 }
 
       const piece =
-      getPieceAt(x,y);
-
+        getPieceAt(x,y);
+      
       if(piece){
+        cell.innerHTML = `
+        <div class="piece ${ownerOf(piece)}">
+        <div class="badge-top"></div>
+        <div class="piece-body">${piece.type}</div>
+        <div class="badge-bottom"></div>
+        </div>
+        `;
 
-    cell.innerHTML = `
-<div class="piece ${ownerOf(piece)}">
-    <div class="badge-top"></div>
-    <div class="piece-body">${piece.type}</div>
-    <div class="badge-bottom"></div>
-</div>
-`;
-
-    const pieceDiv=cell.querySelector(".piece");
-
-    if(piece.restTurns>0){
-
-        cell.classList.add("resting");
-
-        pieceDiv.querySelector(".badge-bottom").textContent=
+        const pieceDiv=cell.querySelector(".piece");
+        if(piece.team==="white"){
+          pieceDiv.style.transform="rotate(180deg)";
+        }
+        
+        if(piece.restTurns>0){
+          cell.classList.add("resting");
+          pieceDiv.querySelector(".badge-bottom").textContent=
             "🚫"+piece.restTurns;
-    }
-
-    if(piece.controlTurns>0){
-
-        cell.classList.add("controlled");
-
-        pieceDiv.style.transform="rotate(180deg)";
-
-        pieceDiv.querySelector(".badge-bottom").textContent=
+        }
+        
+        let rotation = piece.team==="white" ? 180 : 0;
+        if(piece.controlTurns>0){
+          cell.classList.add("controlled");
+          rotation += 180;
+          pieceDiv.querySelector(".badge-bottom").textContent=
             "🌀"+piece.controlTurns;
-    }
-
-    if(isBuffed(piece)){
-
-        pieceDiv.querySelector(".badge-top").textContent=
-            piece.type==="香"
-            ? "⚔️"
-            : "⚔️"+piece.buffTurns;
-    }
-}
+        }
+        pieceDiv.style.transform=`rotate(${rotation}deg)`;
+        
+        if(piece.type==="香"){
+          pieceDiv.querySelector(".badge-top").textContent="⚔️";
+        }else if(piece.buffTurns>0){
+          pieceDiv.querySelector(".badge-top").textContent=
+            "⚔️"+piece.buffTurns;
+        }
+      }
       
       if(
         selectedCell &&
