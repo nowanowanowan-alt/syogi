@@ -39,38 +39,37 @@ body{
 }
 
 .piece{
-    width:54px;
-    height:60px;
+  width:54px;
+  height:60px;
 
-    background:#f6d57a;
+  background:#f6d57a;
 
-    clip-path:polygon(
-        50% 0%,
-        100% 25%,
-        88% 100%,
-        12% 100%,
-        0% 25%
-    );
+  clip-path:polygon(
+    50% 0%,
+    100% 25%,
+    88% 100%,
+    12% 100%,
+    0% 25%
+  );
 
-    border:none;
+  border:none;
+  filter:drop-shadow(0 0 2px black);
 
-    position:relative;
+  position:absolute;
+  inset:0;
 
-    display:flex;
-    justify-content:center;
-    align-items:center;
+  display:flex;
+  justify-content:center;
+  align-items:center;
 
-    font-size:26px;
-    font-weight:bold;
+  font-size:26px;
+  font-weight:bold;
 }
 
-.piece::before{
-    content:"";
-    position:absolute;
-    inset:-2px;
-    background:#000;
-    clip-path:inherit;
-    z-index:-1;
+.piece-wrapper{
+    position:relative;
+    width:54px;
+    height:60px;
 }
 
 .piece.black{
@@ -107,16 +106,16 @@ body{
 
 .badge-top{
     position:absolute;
-    top:2px;
-    right:3px;
-    font-size:12px;
+    top:-5px;
+    right:-5px;
+    z-index:20
 }
 
 .badge-bottom{
     position:absolute;
-    bottom:2px;
-    right:3px;
-    font-size:12px;
+    bottom:-5px;
+    right:-5px;
+    z-index:20;
 }
 
 .piece.rest{
@@ -268,39 +267,6 @@ body{
   height:60px;
 
   cursor:pointer;
-}
-
-.warpField::after{
-  content:"W";
-
-  position:absolute;
-  top:2px;
-  right:4px;
-
-  color:#00b4ff;
-  font-size:12px;
-}
-
-.restField::after{
-  content:"R";
-
-  position:absolute;
-  top:2px;
-  right:4px;
-
-  color:#ff4d6d;
-  font-size:12px;
-}
-
-.buffField::after{
-  content:"B";
-
-  position:absolute;
-  top:2px;
-  right:4px;
-
-  color:#ffd60a;
-  font-size:12px;
 }
 
 .side{
