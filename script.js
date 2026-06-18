@@ -169,7 +169,7 @@ function render(){
       
       const fieldList =
         fields.filter(f=>f.x===x&&f.y===y);
-      const types = fieldList.map(...)
+      const types = fieldList.map(...);
       
       if(types.includes("warpField")){cell.classList.add("warpField");}
       if(types.includes("restField")){cell.classList.add("restField");}
