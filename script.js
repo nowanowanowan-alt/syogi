@@ -12,6 +12,8 @@ let roundCount = 1;
 
 let selectedPiece = null;
 
+let selectedCell = null;
+
 let pieces = [];
 
 let fields = [];
@@ -271,42 +273,46 @@ ${icon}
             : "⚔️"+piece.buffTurns;
     }
 }
+      
+      if(
+        selectedCell &&
+        selectedCell.x===x &&
+        selectedCell.y===y
+      ){
+        cell.classList.add("selected");
+      }
 
-cell.onclick = () => onCellClick(x,y);
+      cell.onclick = () => onCellClick(x,y);
 
-boardEl.appendChild(cell);
+      boardEl.appendChild(cell);
 
-if(
-    isDraftPhase &&
-    placingDraftPiece &&
-    canPlaceDraftPiece(x,y) &&
-    !getPieceAt(x,y)
-){
-    cell.classList.add("highlight");
-}
+      if(
+        isDraftPhase &&
+        placingDraftPiece &&
+        canPlaceDraftPiece(x,y) &&
+        !getPieceAt(x,y)
+      ){
+        cell.classList.add("highlight");
+      }
+    }
+  }
 
-}
-}
-
-if(!selectedPiece){
-  updatePieceInfo(null);
-}
-
-
-document
-.getElementById("startBtn")
-.onclick=()=>{
-
+  if(!selectedPiece){
+    updatePieceInfo(null);
+  }
+  
   document
-  .getElementById("startBtn")
-  .style.display="none";
-
-  document
-  .getElementById("draftUI")
-  .style.display="block";
-
-  startDraft();
-};
+    .getElementById("startBtn")
+    .onclick=()=>{
+      document
+        .getElementById("startBtn")
+        .style.display="none";
+      document
+        .getElementById("draftUI")
+        .style.display="block";
+      startDraft();
+    };
+}
 
 //========================
 // ドラフト
@@ -651,6 +657,8 @@ function onCellClick(x,y){
 
     selectedPiece = clickedPiece;
 
+    selectedCell = null;
+
     updatePieceInfo(clickedPiece);
 
     render();
@@ -679,7 +687,13 @@ if(!clickedPiece){
 
     render();
 }
-
+  
+  selectedPiece = null;
+  selectedCell = {x,y};
+  updateFieldInfo(x,y);
+  render();
+  return;
+  
   if(selectedPiece){
 
     const moves =
@@ -2715,21 +2729,25 @@ function updateFieldInfo(x,y){
 
     const list =
         fields.filter(
-            f=>f.x===x && f.y===y
+            f=>f.x===x&&f.y===y
         );
+
+    let html=
+`<h3>マス情報</h3>
+(${x},${y})
+`;
 
     if(list.length===0){
 
-        info.innerHTML=`
-<h3>(${x},${y})</h3>
+        html+=`
+<hr>
 フィールドなし
 `;
 
+        info.innerHTML=html;
+
         return;
     }
-
-    let html=
-`<h3>(${x},${y})</h3>`;
 
     for(const field of list){
 
@@ -2743,11 +2761,7 @@ function getFieldDescription(field){
 
     let icon="";
     let name="";
-    let text=""; 
-    const owner =
-      field.team===currentTurn
-      ? "味方"
-      : "敵";
+    let effect="";
 
     switch(field.type){
 
@@ -2755,44 +2769,49 @@ function getFieldDescription(field){
 
             icon="☠️";
             name="即死";
-
-            text="踏んだ敵コマを即座に撃破";
-
+            effect="敵が踏むと即死";
             break;
 
         case "restField":
 
             icon="🚫";
             name="休み";
-
-            text="踏んだ敵コマを1ターン休みにする";
-
+            effect="敵が踏むと1ターン休み";
             break;
 
         case "rebellionField":
 
             icon="💫";
             name="反逆";
-
-            text="踏んだ敵コマを1ターン寝返らせる";
-
+            effect="敵が踏むと1ターン寝返る";
             break;
 
         case "warpField":
 
             icon="🌀";
             name="ワープ";
-
-            text="踏んだ敵コマを周囲4マスのランダムな位置へ飛ばす";
-
+            effect="敵が踏むとランダムワープ";
             break;
     }
 
+    const owner =
+        field.team===currentTurn
+        ? "味方"
+        : "敵";
+
     return `
 <hr>
-<b>${icon} ${name}</b><br>
-所有：${field.team}<br>
-${text}
+
+<b>${icon} ${name}</b>
+
+<br>
+
+所有：
+<b>${owner}</b>
+
+<br>
+
+${effect}
 `;
 }
 
