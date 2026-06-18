@@ -593,114 +593,82 @@ function onCellClick(x,y){
         p.team === currentTurn &&
         p.bishopWarpReady
     );
-
-  if(
-    bishopReady &&
-    clickedPiece &&
-    clickedPiece.id !== bishopReady.id
-  ){
-
-    alert(
-      "角の特殊スキル待機中"
-    );
-
-    return;
-  }
-  
-  if(skillMode){
-    handleSkillClick(x,y);
-    return;
-  }
   
   if(isDraftPhase){
-
     if(!placingDraftPiece){
       return;
-  }
-    
+    }
     if(!canPlaceDraftPiece(x,y)){
       return;
-  }
-
+    }
     if(getPieceAt(x,y)){
       return;
     }
-
     placeDraftPiece(
       selectedDraftPiece,
       x,
       y,
       currentTurn
     );
-
     return;
   }
-
+  if(skillMode){
+    handleSkillClick(x,y);
+    return;
+  }
+  if(
+    bishopReady &&
+    clickedPiece &&
+    clickedPiece.id !== bishopReady.id
+  ){
+  alert(
+    "角の特殊スキル待機中"
+  );
+    return;
+  }
   if(wiseMoveAfterSkill){
-
     if(clickedPiece !== skillPiece){
-
       return;
     }
   }
   
   if(selectedPiece){
-
     const moves = generateMoves(selectedPiece);
-
     const canMove = moves.some(
         m => m.x===x && m.y===y
     );
-
     if(canMove){
         movePiece(selectedPiece,x,y);
         return;
     }
-}
+  }
 
   if(clickedPiece){
-
     if(ownerOf(clickedPiece)===currentTurn){
-
-        selectedPiece = clickedPiece;
-        selectedCell = null;
-
-        updatePieceInfo(clickedPiece);
-
-        render();
-
-        if(clickedPiece.restTurns===0){
-
-            highlightMoves(clickedPiece);
-            showSkillButtons(clickedPiece);
-
-        }else{
-
-            alert("この駒は休み中");
-        }
-
-        return;
+      selectedPiece = clickedPiece;
+      selectedCell = null;
+      updatePieceInfo(clickedPiece);
+      render();
+      if(clickedPiece.restTurns===0){
+        highlightMoves(clickedPiece);
+        showSkillButtons(clickedPiece);
+      }else{
+        alert("この駒は休み中");
+      }
+      return;
     }
-}
-  
+  }
   if(!clickedPiece){
-
     selectedCell = {x,y};
-
     updateFieldInfo(x,y);
-
     render();
-
     return;
-}
+  }
   
-selectedPiece = null;
-selectedCell = {x,y};
-
-updateFieldInfo(x,y);
-
-render();
-  
+  selectedPiece = null;
+  selectedCell = {x,y};
+  updateFieldInfo(x,y);
+  render();
 }
 
 function handleSkillClick(x,y){
@@ -1382,21 +1350,20 @@ function addMove(
 }
 
 function highlightMoves(piece){
-  const cells =
-  document.querySelectorAll(".cell");
-  // 選択中コマを黄色に
-  cells.forEach(cell=>{
-    if(
-      Number(cell.dataset.x) === piece.x &&
-      Number(cell.dataset.y) === piece.y
-    ){
-      cell.classList.add("selected");
+  const cell=document.querySelector(
+    `[data-x="${move.x}"][data-y="${move.y}"]`
+  );
+  moves.forEach(move=>{
+    const cell=document.querySelector(
+      `[data-x="${move.x}"][data-y="${move.y}"]`
+    );
+    if(cell){
+      cell.classList.add("highlight");
     }
   });
 
   const moves =
   generateMoves(piece);
-  // 動ける場所を薄黄色に
   moves.forEach(move=>{
     cells.forEach(cell=>{
       if(
@@ -1755,7 +1722,7 @@ function reflectFieldEffects(princess){
       f.y === princess.y
   );
 
-  if(!field){
+  if(fieldList.length===0){
     return;
   }
 
