@@ -687,13 +687,7 @@ if(!clickedPiece){
 
     render();
 }
-  
-  selectedPiece = null;
-  selectedCell = {x,y};
-  updateFieldInfo(x,y);
-  render();
-  return;
-  
+
   if(selectedPiece){
 
     const moves =
@@ -708,7 +702,14 @@ if(!clickedPiece){
 
       movePiece(selectedPiece,x,y);
     }
-  }
+  }  
+  
+  selectedPiece = null;
+  selectedCell = {x,y};
+  updateFieldInfo(x,y);
+  render();
+  return;
+  
 }
 
 function handleSkillClick(x,y){
