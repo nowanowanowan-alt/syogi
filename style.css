@@ -80,6 +80,16 @@ body{
     color:red;
 }
 
+#pieceInfo{
+    height:330px;
+    overflow-y:auto;
+
+    border:2px solid #444;
+    background:white;
+
+    padding:10px;
+}
+
 .cell.dark{
   background:#c89b63;
 }
@@ -273,8 +283,30 @@ body{
   cursor:pointer;
 }
 
+#battleLog{
+
+    flex:1;
+
+    min-height:250px;
+
+    overflow-y:auto;
+
+    border:2px solid #444;
+
+    background:#fafafa;
+
+    padding:8px;
+
+    font-size:14px;
+
+    white-space:pre-line;
+}
+
 .side{
-  width:250px;
+    width:280px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
 }
 
 .piece-black{
