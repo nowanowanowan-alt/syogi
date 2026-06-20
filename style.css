@@ -212,7 +212,7 @@ function render(){
       const pieceDiv =
     cell.querySelector(".piece");
 
-updatePieceAppearance(piece,wrapper);
+updatePieceAppearance(piece,wrapperEl);
 }
 
       if(fieldList.length >= 2){
@@ -1328,38 +1328,6 @@ function applySingleField(piece, field){
   }
 }
 
-function applyFieldEffects(piece){
-  const fieldList =
-    fields.filter(
-      f=>f.x===piece.x && f.y===piece.y
-    );
-  if(piece.type==="姫"){
-    reflectFieldEffects(piece);
-    return;
-  }
-  if(fieldList.length===0){
-    return;
-  }
-  // 優先順位
-  const priority = [
-    "deathField",
-    "restField",
-    "rebellionField",
-    "warpField"
-  ];
-  fieldList.sort(
-    (a,b)=>
-      priority.indexOf(a.type)-
-      priority.indexOf(b.type)
-  );
-  for(const field of fieldList){
-    applySingleField(piece,field);
-    if(!pieces.includes(piece)){
-      return;
-    }
-  }
-}
-
 function triggerField(field){
   for(const piece of [...pieces]){
     if(piece.x!==field.x) continue;
@@ -1410,7 +1378,7 @@ function updateFields(trigger=false){
           team:king.team,
           x,
           y:kingRestLine,
-          ownerId: piece.id
+          ownerId: king.id
         };
         fields.push(field);if(trigger){
           triggerField(field);
@@ -1423,7 +1391,7 @@ function updateFields(trigger=false){
             team:king.team,
             x,
             y:kingRestRow,
-            ownerId: piece.id
+            ownerId: king.id
           };
           fields.push(field);if(trigger){
             triggerField(field);
@@ -1728,7 +1696,7 @@ function addField(x,y,type,team,duration,trigger=false,ownerId=null){
     return;
   }
   const field={
-    type,team,x,y,duration
+    type,team,x,y,duration,ownerId
   };
   fields.push(field);
   if(trigger){
@@ -1775,25 +1743,37 @@ function createKingWarpField(piece,trigger=false){
       piece.x+i,
       piece.y+i,
       "warpField",
-      piece.team
+      piece.team,
+      Infinity,
+      trigger,
+      piece.id
     );
     addField(
       piece.x+i,
       piece.y-i,
       "warpField",
-      piece.team
+      piece.team,
+      Infinity,
+      trigger,
+      piece.id
     );
     addField(
       piece.x-i,
       piece.y+i,
       "warpField",
-      piece.team
+      piece.team,
+      Infinity,
+      trigger,
+      piece.id
     );
     addField(
       piece.x-i,
       piece.y-i,
       "warpField",
-      piece.team
+      piece.team,
+      Infinity,
+      trigger,
+      piece.id
     );
   }
 }
@@ -2291,9 +2271,9 @@ function finishWiseFieldSkill(){
 
     selectedPiece = skillPiece;
 
-    highlightMoves(skillPiece);
-
     render();
+
+    highlightMoves(skillPiece);
 }
 
 function bishopReturnWarp(piece){
@@ -2324,12 +2304,6 @@ function bishopReturnWarp(piece){
   const target=getPieceAt(randomX,targetY);
   piece.x = randomX;
   piece.y = targetY;
-  if(
-    target &&
-    ownerOf(target)!==ownerOf(piece)
-  ){
-    capturePiece(piece,target);
-  }
   updateFields(true);
 }
 
