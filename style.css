@@ -91,7 +91,7 @@ body{
 }
 
 #pieceInfo{
-    height:330px;
+    height:260px;
     overflow-y:auto;
 
     border:2px solid #444;
@@ -109,9 +109,27 @@ body{
 }
 
 .highlight{
-  background:#fff3a3 !important;
-  box-shadow:
-  inset 0 0 0 3px #e6c200;
+  animation: highlightBlink 1s infinite;
+}
+
+@keyframes highlightBlink{
+
+  0%{
+    box-shadow:
+      inset 0 0 0 3px rgba(255,230,0,0.2);
+  }
+
+  50%{
+    box-shadow:
+      inset 0 0 0 6px rgba(255,230,0,1),
+      0 0 12px rgba(255,230,0,0.8);
+  }
+
+  100%{
+    box-shadow:
+      inset 0 0 0 3px rgba(255,230,0,0.2);
+  }
+
 }
 
 .selected{
