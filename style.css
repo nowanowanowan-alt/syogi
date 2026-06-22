@@ -11,9 +11,10 @@ body{
 }
 
 .game{
-  display:flex;
-  gap:30px;
-  margin-top:20px;
+    display:flex;
+    gap:30px;
+    margin-top:20px;
+    align-items:flex-start;
 }
 
 #board{
@@ -294,9 +295,9 @@ body{
 
 #battleLog{
 
-    flex:1;
+    flex:none;
 
-    min-height:250px;
+    height:250px;
 
     overflow-y:auto;
 
