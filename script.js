@@ -2755,10 +2755,10 @@ function updatePieceAppearance(piece,wrapper){
     wrapper.querySelector(".piece");
 
   const topBadge =
-    pieceDiv.querySelector(".badge-top");
+    wrapper.querySelector(".badge-top");
 
   const bottomBadge =
-    pieceDiv.querySelector(".badge-bottom");
+    wrapper.querySelector(".badge-bottom");
 
   topBadge.textContent = "";
   bottomBadge.textContent = "";
