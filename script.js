@@ -209,8 +209,6 @@ function render(){
        
         const topBadge = wrapper.querySelector(".badge-top");
         const bottomBadge = wrapper.querySelector(".badge-bottom");
-      const wrapper =
-    cell.querySelector(".piece-wrapper");
 
 updatePieceAppearance(piece,wrapper);
 }
@@ -2751,7 +2749,7 @@ ${effect}
 `;
 }
 
-function updatePieceAppearance(piece,pieceDiv){
+function updatePieceAppearance(piece,wrapper){
 
   const pieceDiv =
     wrapper.querySelector(".piece");
