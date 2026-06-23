@@ -651,6 +651,17 @@ pieces.some(
     p.bishopWarpReady
 );
 
+  if(isDraftPhase){
+    if(!placingDraftPiece){
+      return;
+    }
+    if(!canPlaceDraftPiece(x,y)){
+      return;
+    }
+    if(getPieceAt(x,y)){
+      return;
+    }
+
   if(reviveMode){
 
     if(highlights.some(h=>h.x===x && h.y===y)){
@@ -688,16 +699,6 @@ if(skillMode){
       return;
     }
 
-  if(isDraftPhase){
-    if(!placingDraftPiece){
-      return;
-    }
-    if(!canPlaceDraftPiece(x,y)){
-      return;
-    }
-    if(getPieceAt(x,y)){
-      return;
-    }
     placeDraftPiece(
       selectedDraftPiece,
       x,
