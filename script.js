@@ -272,24 +272,30 @@ if(
 ){
     cell.classList.add("highlight");
 }
-
     }
   }
 
-  if(selectedPiece){
+if(selectedPiece){
     updatePieceInfo(selectedPiece);
 }
+
 else if(selectedCell){
     updateFieldInfo(selectedCell.x, selectedCell.y);
+}
+
+else if(isDraftPhase && placingDraftPiece){
+
+    updatePieceInfo(
+        createPreviewPiece(
+            selectedDraftPiece,
+            currentTurn
+        )
+    );
 }
 else{
     updatePieceInfo(null);
 }
-if(!selectedPiece){
-    clearSkillButtons();
-}
 
-  
   document
     .getElementById("startBtn")
     .onclick=()=>{
@@ -449,6 +455,10 @@ function pickDraftPiece(player,type){
   selectedDraftPiece = type;
 
   placingDraftPiece = true;
+
+updatePieceInfo(
+    createPreviewPiece(type, player)
+);
 
 document.getElementById("draftUI").style.visibility="hidden";
 
@@ -660,7 +670,10 @@ pieces.some(
     }
     if(getPieceAt(x,y)){
       return;
-    }
+    } 
+    placeDraftPiece(selectedDraftPiece,x,y,currentTurn);
+    return;
+  }
 
   if(reviveMode){
 
@@ -694,19 +707,11 @@ if(skillMode){
     alert("角の特殊スキル待機中");
     return;
 }
+
   if(wiseMoveAfterSkill){
     if(clickedPiece !== skillPiece){
       return;
     }
-
-    placeDraftPiece(
-      selectedDraftPiece,
-      x,
-      y,
-      currentTurn
-    );
-    return;
-  }
   }
 
     if(selectedPiece){
