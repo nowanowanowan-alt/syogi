@@ -26,11 +26,25 @@ let skillTargets = [];
 
 let skillSpawnTypes = [];
 
+let skillUnlocked = {
+    black:false,
+    white:false
+};
+
 let kingRestLine=null;
 
 let kingRestRow=null;
 
 let wiseMoveAfterSkill = false;
+
+let reviveTarget = null;
+
+let reviveMode = false;
+
+let teamLostCount = {
+    black:0,
+    white:0
+};
 
 let draftRound = 1;
 
@@ -127,6 +141,12 @@ function setupGame(){
     black:0,
     white:0
   };
+
+skillUnlocked = {
+    black:false,
+    white:false
+};
+
   
   pieces.push(
   createPiece({
@@ -135,8 +155,13 @@ function setupGame(){
     x:4,
     y:8,
     moveType:"king"
-
   })
+
+teamLostCount = {
+    black:0,
+    white:0
+};
+
 );
 
 pieces.push(
@@ -347,28 +372,82 @@ function showDraftChoices(){
     btn.textContent =
     type;
 
-    btn.onclick = ()=>{
+btn.dataset.type = type;
 
-      pickDraftPiece(
-        player,
-        type
-      );
-    };
+btn.onmouseenter = ()=>{
+
+    const preview = createPiece({
+        type,
+        team:player,
+        moveType:convertMoveType(type)
+    });
+
+    updatePieceInfo(
+      createPreviewPiece(type,player)
+    );
+};
+
+btn.onclick = ()=>{
+
+    document
+      .querySelectorAll("#draftButtons button")
+      .forEach(b=>b.classList.remove("selected"));
+
+    btn.classList.add("selected");
+
+    pickDraftPiece(player,type);
+};
 
     area.appendChild(btn);
   });
 
   turnDisplay.textContent =
     `第${draftRound}ラウンド　${player} のピック`;
+
+updatePieceInfo(
+    createPreviewPiece(
+        choices[0],
+        player
+    )
+);
+
 }
   
+
+function createPreviewPiece(type,team){
+
+    return{
+
+        type,
+        team,
+        moveType:convertMoveType(type),
+
+        killCount:0,
+        restTurns:0,
+        controlTurns:0,
+        buffTurns:0,
+
+        summonedCount:0,
+        bishopWarpUses:2,
+        warpFieldUses:3,
+        restFieldUses:3,
+        rebellionFieldUses:1
+    };
+}
+
 function pickDraftPiece(player,type){
 
   selectedDraftPiece = type;
 
   placingDraftPiece = true;
 
+document.getElementById("draftUI").style.visibility="hidden";
+
   currentTurn = player;
+
+  document
+    .querySelectorAll("#draftButtons button")
+    .forEach(b=>b.classList.remove("selected"));
 
   render();
 }
@@ -423,6 +502,11 @@ function placeDraftPiece(type,x,y,team){
   );
 
   placingDraftPiece = false;
+
+if(isDraftPhase){
+    document.getElementById("draftUI").style.visibility="visible";
+}
+
   selectedDraftPiece = null;
 
   draftPickIndex++;
@@ -557,7 +641,44 @@ pieces.some(
     p.team===currentTurn &&
     p.bishopWarpReady
 );
-  
+
+  if(reviveMode){
+
+    if(highlights.some(h=>h.x===x && h.y===y)){
+
+        reviveTarget.x=x;
+        reviveTarget.y=y;
+
+        board[y][x]=reviveTarget;
+
+        reviveMode=false;
+        reviveTarget=null;
+
+        highlights=[];
+
+        render();
+    }
+    return;
+}
+
+if(skillMode){
+    handleSkillClick(x,y);
+    return;
+  }
+  if(
+    skillPiece &&
+    skillPiece.type==="角" &&
+    skillPiece.bishopWarpReady &&
+    clickedPiece!==skillPiece
+){
+    alert("角の特殊スキル待機中");
+    return;
+}
+  if(wiseMoveAfterSkill){
+    if(clickedPiece !== skillPiece){
+      return;
+    }
+
   if(isDraftPhase){
     if(!placingDraftPiece){
       return;
@@ -576,23 +697,6 @@ pieces.some(
     );
     return;
   }
-  if(skillMode){
-    handleSkillClick(x,y);
-    return;
-  }
-  if(
-    skillPiece &&
-    skillPiece.type==="角" &&
-    skillPiece.bishopWarpReady &&
-    clickedPiece!==skillPiece
-){
-    alert("角の特殊スキル待機中");
-    return;
-}
-  if(wiseMoveAfterSkill){
-    if(clickedPiece !== skillPiece){
-      return;
-    }
   }
 
     if(selectedPiece){
@@ -609,9 +713,9 @@ pieces.some(
 
 if(
     roundCount===1 &&
-    ["歩","銀","香"].includes(clickedPiece.type)
+    ["角","飛","金","王","玉",].includes(clickedPiece.type)
 ){
-    alert("1ラウンド目は前衛は動けません");
+    alert("1ラウンド目に動けないコマです");
     return;
 }
 
@@ -803,6 +907,23 @@ function endTurn(){
     
     updateWiseBuff();
   }
+
+if(!canTeamAct(currentTurn)){
+
+    addLog(`⏭ ${teamName(currentTurn)}は行動できる駒がないためターンをパス`);
+
+    const skipped = currentTurn;
+
+    currentTurn =
+        currentTurn==="black"
+        ? "white"
+        : "black";
+
+    if(skipped==="white"){
+        processRoundEnd();
+        updateWiseBuff();
+    }
+}
   
   for(const piece of pieces){
     if(piece.type==="飛"){
@@ -873,11 +994,40 @@ fields.filter(field=>{
 
     return field.duration>0;
 });
+
+for(const team of ["black","white"]){
+
+    if(
+        !skillUnlocked[team] &&
+        roundCount >= 3 &&
+        teamLostCount[team] >= 1
+    ){
+        skillUnlocked[team] = true;
+        addLog(`✨ ${teamName(team)}チームの特殊スキルが解放！`);
+    }
+}
+}
+
+function canTeamAct(team){
+
+    return pieces.some(piece=>{
+
+        if(ownerOf(piece)!==team) return false;
+
+        if(piece.restTurns>0) return false;
+
+        return generateMoves(piece).length>0;
+
+    });
+
 }
 
 function capturePiece(attacker,target){
-  if(!target){return;}
+
+  if(!target) return;
+
   logCapture(attacker,target);
+
   const princess =
     pieces.find(
       p =>
@@ -888,29 +1038,39 @@ function capturePiece(attacker,target){
 
   attacker.killCount++;
 
-if(attacker.type==="歩"){
-
-    logPawnPower(
-        attacker,
-        attacker.killCount
-    );
-}
-  
-  if(target.type === "姫"){
-    removePiece(attacker);
-    logPrincessSacrifice(target);
+  if(attacker.type==="歩"){
+    logPawnPower(attacker,attacker.killCount);
   }
+
+  // 身代わり
   if(
     princess &&
     target.type !== "姫"
   ){
     logPrincessSacrifice(princess);
     logPrincessSave(princess,target);
+
     princess.isSubstituteUsed = true;
+
     removePiece(princess);
+
+    reviveTarget = piece;
+    reviveMode = true;
+    highlightRespawnSquares(piece.team);
+    render();
+
     return;
   }
-  
+
+  // 本当に姫を倒したときだけ道連れ
+  if(target.type==="姫"){
+    removePiece(target);
+    removePiece(attacker);
+    logPrincessRevenge(attacker);
+    checkWinner();
+    return;
+  }
+
   removePiece(target);
 
   checkWinner();
@@ -937,7 +1097,7 @@ function checkWinner(){
 }
 
 function removePiece(piece){
-
+  teamLostCount[piece.team]++;
   pieces =
   pieces.filter(
     p => p.id !== piece.id
@@ -1302,6 +1462,28 @@ function highlightMoves(piece){
       cell.classList.add("highlight");
     }
   });
+}
+
+function highlightRespawnSquares(team){
+
+    highlights = [];
+
+    const first = team === "black" ? 8 : 0;
+    const second = team === "black" ? 7 : 1;
+
+    for(let x=0;x<9;x++){
+        if(!board[first][x]){
+            highlights.push({x,y:first});
+        }
+    }
+
+    if(highlights.length===0){
+        for(let x=0;x<9;x++){
+            if(!board[second][x]){
+                highlights.push({x,y:second});
+            }
+        }
+    }
 }
     
 //========================
@@ -1742,7 +1924,7 @@ function createKingWarpField(piece,trigger=false){
       piece.y+i,
       "warpField",
       piece.team,
-      Infinity,
+      1,
       trigger,
       piece.id
     );
@@ -1751,7 +1933,7 @@ function createKingWarpField(piece,trigger=false){
       piece.y-i,
       "warpField",
       piece.team,
-      Infinity,
+      1,
       trigger,
       piece.id
     );
@@ -1760,7 +1942,7 @@ function createKingWarpField(piece,trigger=false){
       piece.y+i,
       "warpField",
       piece.team,
-      Infinity,
+      1,
       trigger,
       piece.id
     );
@@ -1769,7 +1951,7 @@ function createKingWarpField(piece,trigger=false){
       piece.y-i,
       "warpField",
       piece.team,
-      Infinity,
+      1,
       trigger,
       piece.id
     );
@@ -1812,6 +1994,17 @@ function createRebellionField(piece,trigger=false){
 function showSkillButtons(piece){
 
   clearSkillButtons();
+
+  if(
+       roundCount < 3 ││
+       teamLostCount[piece.team] === 0
+    ){
+       return;
+    }
+
+if(!skillUnlocked[piece.team]){
+    return;
+}
 
   const area =
   
@@ -2411,6 +2604,12 @@ function logPrincessSacrifice(piece){
 function logPrincessSave(princess,target){
     addLog(
         `👸 姫のスキル「身代わり」により${teamName(target.team)}の${target.type}が復活`
+    );
+}
+
+function logPrincessRevenge(princess,attacker){
+    addLog(
+        `💥 姫の道連れで${teamName(attacker.team)}の${attacker.type}を撃破`
     );
 }
 
