@@ -25,6 +25,11 @@ body{
   background:#c89b63;
 }
 
+.board-area{
+    position:relative;
+    width:max-content;
+}
+
 .cell{
   width:70px;
   height:70px;
@@ -276,39 +281,63 @@ body{
 
 #draftUI{
 
-  position:absolute;
+    position:absolute;
 
-  top:20px;
+    top:-95px;
 
-  right:20px;
+    left:0;
 
-  width:260px;
+    width:100%;
 
-  padding:15px;
+    display:flex;
 
-  border:2px solid black;
+    justify-content:center;
 
-  background:white;
+    z-index:100;
 
-  z-index:100;
+    background:none;
+
+    border:none;
+
+    padding:0;
 }
 
 #draftButtons{
-
   display:flex;
-
-  flex-direction:column;
-
-  gap:10px;
+  gap:12px;
 }
 
 #draftButtons button{
 
   font-size:24px;
-
   height:60px;
 
   cursor:pointer;
+
+  transition:
+    transform .15s,
+    box-shadow .15s,
+    border-color .15s;
+}
+
+#draftButtons button:hover{
+
+  transform:
+    translateY(-4px)
+    scale(1.06);
+
+  box-shadow:
+    0 8px 16px rgba(0,0,0,.25);
+}
+
+#draftButtons button.selected{
+
+    border:4px solid #ffd700;
+
+    box-shadow:
+        0 0 15px rgba(255,215,0,.8);
+
+    transform:scale(1.08);
 }
 
 #battleLog{
