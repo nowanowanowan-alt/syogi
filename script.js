@@ -14,6 +14,8 @@ let selectedPiece = null;
 
 let selectedCell = null;
 
+let highlights = [];
+
 let pieces = [];
 
 let fields = [];
@@ -156,13 +158,12 @@ skillUnlocked = {
     y:8,
     moveType:"king"
   })
+);
 
 teamLostCount = {
     black:0,
     white:0
 };
-
-);
 
 pieces.push(
   createPiece({
@@ -264,6 +265,14 @@ updatePieceAppearance(piece,wrapper);
       ){
         cell.classList.add("highlight");
       }
+
+if(
+    reviveMode &&
+    highlights.some(h => h.x === x && h.y === y)
+){
+    cell.classList.add("highlight");
+}
+
     }
   }
 
@@ -649,7 +658,7 @@ pieces.some(
         reviveTarget.x=x;
         reviveTarget.y=y;
 
-        board[y][x]=reviveTarget;
+        pieces.push(reviveTarget);
 
         reviveMode=false;
         reviveTarget=null;
@@ -1054,7 +1063,7 @@ function capturePiece(attacker,target){
 
     removePiece(princess);
 
-    reviveTarget = piece;
+    reviveTarget = target;
     reviveMode = true;
     highlightRespawnSquares(piece.team);
     render();
@@ -1066,7 +1075,7 @@ function capturePiece(attacker,target){
   if(target.type==="姫"){
     removePiece(target);
     removePiece(attacker);
-    logPrincessRevenge(attacker);
+    logPrincessRevenge(target,attacker);
     checkWinner();
     return;
   }
@@ -1086,7 +1095,7 @@ function checkWinner(){
   if(teams.length ===1){
 
     alert(
-      `${teams[0]} の勝利！`
+      `${teamName(teams[0])} の勝利！`
     );
   }
 
@@ -1472,14 +1481,14 @@ function highlightRespawnSquares(team){
     const second = team === "black" ? 7 : 1;
 
     for(let x=0;x<9;x++){
-        if(!board[first][x]){
+        if(!getPieceAt(x,first)){
             highlights.push({x,y:first});
         }
     }
 
     if(highlights.length===0){
         for(let x=0;x<9;x++){
-            if(!board[second][x]){
+            if(!getPieceAt(x,second)){
                 highlights.push({x,y:second});
             }
         }
@@ -1996,7 +2005,7 @@ function showSkillButtons(piece){
   clearSkillButtons();
 
   if(
-       roundCount < 3 ││
+       roundCount < 3 ||
        teamLostCount[piece.team] === 0
     ){
        return;
@@ -2519,7 +2528,7 @@ function addLog(text){
 }
 
 function teamName(team){
-    return team==="black" ? "黒" : "白";
+    return team==="black" ? "黒" : "赤";
 }
 
 function logMove(piece,x,y){
