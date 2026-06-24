@@ -297,6 +297,41 @@ body{
     z-index:1000;
 }
 
+.draftPiece{
+    width:80px;
+    height:90px;
+
+    clip-path: polygon(
+        50% 0%,
+        100% 28%,
+        88% 100%,
+        12% 100%,
+        0% 28%
+    );
+
+    border:2px solid #333;
+    background:#f4d9a4;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    font-size:32px;
+    font-weight:bold;
+
+    cursor:pointer;
+    transition:.15s;
+}
+
+.draftPiece.selected{
+    outline:4px solid #4da3ff;
+    transform:scale(1.08);
+}
+
+.draftPiece:hover{
+    transform:translateY(-4px);
+}
+
 #draftButtons{
     display:flex;
     justify-content:center;
