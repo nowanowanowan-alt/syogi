@@ -175,7 +175,12 @@ pieces.push(
   })
 );
 
-  render();}
+  render();
+
+document.getElementById("draftBackBtn").onclick =
+    cancelDraftPlacement;
+
+}
   
 function render(){
   boardEl.innerHTML = "";
@@ -377,6 +382,10 @@ function showDraftChoices(){
 
   area.innerHTML = "";
 
+document.getElementById("draftSelected").textContent = "";
+
+draftBackBtn.style.display = "none";
+
   choices.forEach(type=>{
 
     const btn =
@@ -456,11 +465,18 @@ function pickDraftPiece(player,type){
 
   placingDraftPiece = true;
 
+  draftBackBtn.style.display = "block";
+
+document.getElementById("draftSelected").textContent =
+    `${type} を選択中`;
+
 updatePieceInfo(
     createPreviewPiece(type, player)
 );
 
 document.getElementById("draftUI").style.visibility="hidden";
+
+document.getElementById("draftBackBtn").style.display = "block";
 
   currentTurn = player;
 
@@ -522,11 +538,15 @@ function placeDraftPiece(type,x,y,team){
 
   placingDraftPiece = false;
 
+document.getElementById("draftBackBtn").style.display = "none";
+
 if(isDraftPhase){
     document.getElementById("draftUI").style.visibility="visible";
 }
 
   selectedDraftPiece = null;
+
+  draftBackBtn.style.display = "none";
 
   draftPickIndex++;
 
@@ -557,6 +577,18 @@ if(isDraftPhase){
   render();
 
   showDraftChoices();
+}
+
+function cancelDraftPlacement(){
+
+    placingDraftPiece = false;
+    selectedDraftPiece = null;
+
+    document.getElementById("draftUI").style.visibility = "visible";
+
+    render();
+
+    showDraftChoices();
 }
     
 function canPlaceDraftPiece(
@@ -881,17 +913,27 @@ logKingRest(piece,kingRestRow);
     return;
   }else{
     updateFields(true);
-  }
-  
-  if(piece.type === "飛"){
-    piece.remainingActions--;
-    if(piece.remainingActions > 0){
-      selectedPiece = piece;
-      render();
-      highlightMoves(piece);
-      return;
+    for(const field of fields){
+      triggerField(field);
     }
   }
+  
+
+if(piece.type === "飛"){
+
+    piece.remainingActions--;
+
+    if(
+        piece.remainingActions > 0 &&
+        piece.restTurns === 0 &&
+        piece.controlTurns === 0
+    ){
+        selectedPiece = piece;
+        render();
+        highlightMoves(piece);
+        return;
+    }
+}
   
   if(wiseMoveAfterSkill){
     wiseMoveAfterSkill = false;
@@ -3025,5 +3067,18 @@ document
   "click",
   setupGame
 );
+
+document.getElementById("draftBackBtn").onclick = () => {
+
+    placingDraftPiece = false;
+    selectedDraftPiece = null;
+
+    document.getElementById("draftSelected").textContent = "";
+    document.getElementById("draftBackBtn").style.display = "none";
+
+    document.getElementById("draftUI").style.visibility = "visible";
+
+    render();
+};
 
 setupGame();
