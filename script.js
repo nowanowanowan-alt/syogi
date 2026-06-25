@@ -912,10 +912,10 @@ logKingRest(piece,kingRestRow);
     },400);
     return;
   }else{
-    updateFields(true);
-    for(const field of fields){
-      triggerField(field);
-    }
+    updateFields(true)
+//    for(const field of fields){
+//      triggerField(field);
+//    }
   }
   
 
