@@ -1134,14 +1134,20 @@ function capturePiece(attacker,target){
     princess.isSubstituteUsed = true;
 
     removePiece(princess);
+    removePiece(target);
 
     reviveTarget = {
       ...target
     };
-    reviveMode = true;
-    highlightRespawnSquares(target.team);
-    render();
 
+    reviveMode = true;
+
+    highlightRespawnSquares(target.team);
+
+    alert(
+        `姫のスキル「身代わり」により${target.type}が復活<br>1列目に再配置してください`
+    );
+    render();
     return;
   }
 
