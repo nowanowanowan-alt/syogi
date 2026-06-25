@@ -1780,6 +1780,34 @@ function isImmuneToField(piece, fieldType){
   }
 }
 
+function reflectField(field, princess){
+
+    // 反射しないフィールド
+    if(
+        field.type==="deathField" ||
+        field.type==="rebellionField"
+    ){
+        return;
+    }
+
+    const owner =
+        pieces.find(
+            p=>p.id===field.ownerId
+        );
+
+    if(!owner){
+        return;
+    }
+
+    applySingleField(
+        owner,
+        {
+            ...field,
+            team:princess.team
+        }
+    );
+}
+
 function applyWarpField(piece,field){
 
   if(field.team===piece.team){
