@@ -929,9 +929,16 @@ if(piece.type === "飛"){
         piece.controlTurns === 0
     ){
         selectedPiece = piece;
-        render();
-        highlightMoves(piece);
-        return;
+selectedCell = {
+    x: piece.x,
+    y: piece.y
+};
+
+render();
+highlightMoves(piece);
+showSkillButtons(piece);
+
+return;
     }
 }
   
@@ -940,6 +947,9 @@ if(piece.type === "飛"){
     endTurn();
     return;
   }
+
+  selectedPiece = null;
+  selectedCell = null;
   endTurn();
 }
 
@@ -954,6 +964,9 @@ function endTurn(){
   currentTurn === "black"
   ? "white"
   : "black";
+
+  selectedPiece = null;
+  selectedCell = null;
 
   if(
     oldTurn === "white" &&
@@ -1122,9 +1135,11 @@ function capturePiece(attacker,target){
 
     removePiece(princess);
 
-    reviveTarget = target;
+    reviveTarget = {
+      ...target
+    };
     reviveMode = true;
-    highlightRespawnSquares(piece.team);
+    highlightRespawnSquares(target.team);
     render();
 
     return;
