@@ -760,7 +760,7 @@ if(skillMode){
 
 if(
     roundCount===1 &&
-    ["角","飛","金","王","玉",].includes(clickedPiece.type)
+    ["飛","金","砲","王","玉"].includes(clickedPiece.type)
 ){
     alert("1ラウンド目に動けないコマです");
     return;
@@ -867,7 +867,7 @@ function handleSkillClick(x,y){
   }
 }
 
-  function finishSkill(){
+function finishSkill(){
     clearSkillButtons();
     skillMode = null;
 
@@ -994,6 +994,8 @@ if(!canTeamAct(currentTurn)){
 
   updateFields();
 
+  updateSkillUnlock();
+
   render();
 }
 
@@ -1051,18 +1053,27 @@ fields.filter(field=>{
 
     return field.duration>0;
 });
-
-for(const team of ["black","white"]){
-
-    if(
-        !skillUnlocked[team] &&
-        roundCount >= 3 &&
-        teamLostCount[team] >= 1
-    ){
-        skillUnlocked[team] = true;
-        addLog(`✨ ${teamName(team)}チームの特殊スキルが解放！`);
-    }
 }
+
+function updateSkillUnlock(){
+
+    for(const team of ["black","white"]){
+
+        const shouldUnlock =
+            roundCount >= 3 &&
+            teamLostCount[team] >= 1;
+
+        if(
+            shouldUnlock &&
+            !skillUnlocked[team]
+        ){
+            skillUnlocked[team] = true;
+
+            addLog(
+                `✨ ${teamName(team)}チームの特殊スキルが解放！`
+            );
+        }
+    }
 }
 
 function canTeamAct(team){
@@ -1565,21 +1576,35 @@ function applySingleField(piece, field){
 }
 
 function triggerField(field){
-  for(const piece of [...pieces]){
-    if(piece.x!==field.x) continue;
-    if(piece.y!==field.y) continue;
-    if(piece.type==="姫"){
-      reflectFieldEffects(piece);
-    }else{
-      applySingleField(piece,field);
+
+    const princess =
+        pieces.find(
+            p =>
+                p.x===field.x &&
+                p.y===field.y &&
+                p.type==="姫"
+        );
+
+    if(princess){
+        reflectField(field, princess);
+        return;
     }
-    if(!pieces.includes(piece)){
-      break;
+
+    for(const piece of [...pieces]){
+
+        if(piece.x!==field.x) continue;
+        if(piece.y!==field.y) continue;
+
+        applySingleField(piece,field);
+
+        if(!pieces.includes(piece)){
+            break;
+        }
     }
-  }
 }
 
 function updateFields(trigger=false){
+  const processed = new Set();
   const king=
     pieces.find(p=>p.type==="王");
   fields =
@@ -1869,43 +1894,6 @@ function applyDeathField(piece,field){
   checkWinner();
 }
 
-function reflectFieldEffects(princess){
-
-  const list = fields.filter(
-    f => f.x===princess.x && f.y===princess.y
-  );
-
-  for(const field of list){
-
-    if(field.type==="rebellionField") continue;
-
-    const owner = pieces.find(
-      p => p.id===field.ownerId
-    );
-
-    if(!owner) continue;
-
-    switch(field.type){
-
-      case "deathField":break;
-
-      case "warpField":
-        applyWarpField(owner,{
-          ...field,
-          team:princess.team
-        });
-        break;
-
-      case "restField":
-        applyRestField(owner,{
-          ...field,
-          team:princess.team
-        });
-        break;
-  }
-}
-}
-
 function createRadiusField(piece,radius,type,trigger = false){
   for(let dx=-radius;dx<=radius;dx++){
     for(let dy=-radius;dy<=radius;dy++){
@@ -2054,16 +2042,9 @@ function showSkillButtons(piece){
 
   clearSkillButtons();
 
-  if(
-       roundCount < 3 ||
-       teamLostCount[piece.team] === 0
-    ){
-       return;
-    }
-
-if(!skillUnlocked[piece.team]){
+  if(!skillUnlocked[piece.team]){
     return;
-}
+  }
 
   const area =
   
@@ -2524,6 +2505,8 @@ function finishWiseFieldSkill(){
     render();
 
     highlightMoves(skillPiece);
+
+    skillPiece=null;
 }
 
 function bishopReturnWarp(piece){
@@ -2758,12 +2741,11 @@ function getMoveDescription(piece){
             }
 
             if(piece.killCount===1){
-                return ` 【強化中】たてよこななめ４
-あと1キルで周囲４` ;
+                return ` 【強化中】たてよこななめ４<br>あと1キルで周囲４` ;
             }
 
-            return ` 【未強化】たてよこ３
-あと1キルでたてよこななめ３
+            return ` 【未強化】たてよこ３<br>
+あと1キルでたてよこななめ３<br>
 あと2キルで周囲４` ;
 
         case "銀":
@@ -2846,33 +2828,33 @@ function getSkillDescription(piece){
             return "前方に休みフィールド";
 
         case "姫":
-            return ` 即死無効
-フィールド反射
-自分を倒したコマを道連れにして倒す
+            return ` 即死無効<br>
+フィールド反射<br>
+自分を倒したコマを道連れにして倒す<br>
 初めに倒された味方の身代わりになって倒される` ;
 
         case "賢":
-            return ` 反逆無効
+            return ` 反逆無効<br>
 毎ターンランダムな味方1体を強化` ;
 
         case "王":
             return isBuffed(piece)
-                ? ` 【強化中】
-ワープ・休み・即死無効
-周囲１マスに即死フィールド
-ななめ３マスにワープフィールド
+                ? ` 【強化中】<br>
+ワープ・休み・即死無効<br>
+周囲１マスに即死フィールド<br>
+ななめ３マスにワープフィールド<br>
 行動後ランダムな*２列*に休みフィールド` 
-                : ` ワープ・休み・即死無効
-周囲１マスに即死フィールド
-ななめ３マスにワープフィールド
+                : ` ワープ・休み・即死無効<br>
+周囲１マスに即死フィールド<br>
+ななめ３マスにワープフィールド<br>
 行動後ランダムな１列に休みフィールド` ;
 
         case "玉":
             return isBuffed(piece)
-                ? ` 【強化中】
-反逆無効
+                ? ` 【強化中】<br>
+反逆無効<br>
 前方扇状・*周囲１マス*に反逆フィールド` 
-                : ` 反逆無効
+                : ` 反逆無効<br>
 前方扇状に反逆フィールド` ;
     }
 
@@ -2888,7 +2870,7 @@ function getUniqueDescription(piece){
 
         case "銀":
             return isBuffed(piece)
-                ? ` 【強化中】
+                ? ` 【強化中】<br>
 歩１体+*ランダムな*コマ１体に分身` 
                 : "歩２体or歩１体+香１体に分身";
 
@@ -2915,7 +2897,7 @@ function getUniqueDescription(piece){
 
         case "賢":
             return isBuffed(piece)
-                ? ` 【強化中】
+                ? ` 【強化中】<br>
 永続するワープ・休みフィールド(3回)、*通常の反逆フィールド(1回)*を任意のマス上に配置してから行動` 
                 : ` 永続するワープ・休みフィールドを任意のマス上に配置してから行動(3回)` ;
 
