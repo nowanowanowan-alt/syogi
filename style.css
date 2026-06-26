@@ -412,3 +412,39 @@ body{
 .skill-highlight{
   background: orange !important;
 }
+
+#skillPanel{
+    margin:12px 0;
+}
+
+#skillButton{
+    width:100%;
+    height:52px;
+
+    font-size:22px;
+    font-weight:bold;
+
+    border:none;
+    border-radius:12px;
+
+    cursor:pointer;
+
+    background:#1f7cff;
+    color:white;
+
+    transition:.2s;
+}
+
+#skillButton:hover{
+    filter:brightness(1.08);
+}
+
+#skillButton:disabled{
+    background:#888;
+    color:#ddd;
+    cursor:default;
+}
+
+#skillArea{
+    margin-top:8px;
+}
