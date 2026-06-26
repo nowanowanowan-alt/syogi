@@ -24,8 +24,6 @@ let skillMode = null;
 
 let skillPiece = null;
 
-let skillTargets = [];
-
 let skillSpawnTypes = [];
 
 let skillUnlocked = {
@@ -38,6 +36,10 @@ let kingRestLine=null;
 let kingRestRow=null;
 
 let wiseMoveAfterSkill = false;
+
+let silverSpawnTypes = [];
+
+let silverSpawnTargets = [];
 
 let reviveTarget = null;
 
@@ -106,13 +108,17 @@ function createPiece(data){
     
     restFieldUses:3,
     
-    rebellionFieldUses:2,
+    rebellionFieldUses:1,
   
     bishopWarpUses:2,
 
     bishopWarpReady:false,
 
     buffTurns:0,
+
+    guardEffect:false,
+
+    reflectEffect:false,
 
     controlledBy:null,
     
@@ -149,7 +155,6 @@ skillUnlocked = {
     white:false
 };
 
-  
   pieces.push(
   createPiece({
     type:"王",
@@ -238,18 +243,9 @@ function render(){
 
         const wrapper = cell.querySelector(".piece-wrapper");
        
-        const topBadge = wrapper.querySelector(".badge-top");
-        const bottomBadge = wrapper.querySelector(".badge-bottom");
-
 updatePieceAppearance(piece,wrapper);
 }
 
-      if(fieldList.length >= 2){
-        cell.innerHTML += `
-        <div class="fieldIcon">
-        ${icon}
-        </div>`;
-      }
       if(
         selectedCell &&
         selectedCell.x===x &&
@@ -384,7 +380,7 @@ function showDraftChoices(){
 
 document.getElementById("draftSelected").textContent = "";
 
-draftBackBtn.style.display = "none";
+document.getElementById("draftBackBtn") = "none";
 
   choices.forEach(type=>{
 
@@ -465,7 +461,7 @@ function pickDraftPiece(player,type){
 
   placingDraftPiece = true;
 
-  draftBackBtn.style.display = "block";
+ document.getElementById("draftBackBtn") = "block";
 
 document.getElementById("draftSelected").textContent =
     `${type} を選択中`;
@@ -546,7 +542,7 @@ if(isDraftPhase){
 
   selectedDraftPiece = null;
 
-  draftBackBtn.style.display = "none";
+ document.getElementById("draftBackBtn") = "none";
 
   draftPickIndex++;
 
@@ -707,7 +703,7 @@ pieces.some(
     return;
   }
 
-  if(reviveMode){
+if(reviveMode==="princess"){
 
     if(highlights.some(h=>h.x===x && h.y===y)){
 
@@ -724,6 +720,58 @@ pieces.some(
         render();
     }
     return;
+}
+
+if(reviveMode==="silver"){
+
+silverSpawnTargets.push({x,y});
+
+if(silverSpawnTargets.length<2){
+
+    highlights =
+        highlights.filter(
+            h=>!(h.x===x && h.y===y)
+        );
+
+    render();
+
+    return;
+}
+
+for(let i=0;i<2;i++){
+
+    const pos=silverSpawnTargets[i];
+
+    pieces.push(createPiece({
+
+        type:silverSpawnTypes[i],
+
+        team:currentTurn,
+
+        x:pos.x,
+
+        y:pos.y,
+
+        moveType:convertMoveType(
+            silverSpawnTypes[i]
+        )
+    }));
+}
+
+silverSpawnTargets=[];
+silverSpawnTypes=[];
+
+reviveMode=false;
+
+highlights=[];
+
+alert(
+`銀の特殊スキルにより分身します。
+1列目に2体配置してください。`
+);
+
+endTurn();
+
 }
 
 if(skillMode){
@@ -760,7 +808,7 @@ if(skillMode){
 
 if(
     roundCount===1 &&
-    ["飛","金","砲","王","玉"].includes(clickedPiece.type)
+    ["飛","砲","王","玉"].includes(clickedPiece.type)
 ){
     alert("1ラウンド目に動けないコマです");
     return;
@@ -873,8 +921,6 @@ function finishSkill(){
 
     skillPiece = null;
 
-    skillTargets = [];
-
     endTurn();
   
   }
@@ -898,7 +944,8 @@ logKingRest(piece,kingRestRow);
 
       }while(kingRestRow===kingRestLine);
     }
-    updateFields(true);
+    updateFields(false);
+    triggerFieldsCreatedBy(piece.id);
   }
   
   if(piece.type === "角" && piece.bishopWarpReady){
@@ -912,7 +959,8 @@ logKingRest(piece,kingRestRow);
     },400);
     return;
   }else{
-    updateFields(true)
+    updateFields(false);
+    triggerFieldsCreatedBy(piece.id);
 //    for(const field of fields){
 //      triggerField(field);
 //    }
@@ -1145,7 +1193,7 @@ function capturePiece(attacker,target){
     highlightRespawnSquares(target.team);
 
     alert(
-        `姫のスキル「身代わり」により${target.type}が復活<br>1列目に再配置してください`
+        `姫のスキル「身代わり」により${target.type}が復活\n1列目に再配置してください`
     );
     render();
     return;
@@ -1252,15 +1300,16 @@ function generateMoves(piece){
 
       // 1回目
       if(piece.remainingActions === 2){
-
-        return orthogonal(piece,4);
+        if(isBuffed(piece)){
+           return orthogonal(piece,4);
+         }
+        return orthogonal(piece,5);
       }
 
       // 2回目（強化）
       if(isBuffed(piece)){
 
         return [
-
           ...orthogonal(piece,2),
           ...diagonal(piece,2)
         ];
@@ -1624,8 +1673,17 @@ function triggerField(field){
     }
 }
 
+function triggerFieldsCreatedBy(ownerId){
+
+    for(const field of fields){
+
+        if(field.ownerId !== ownerId) continue;
+
+        triggerField(field);
+    }
+}
+
 function updateFields(trigger=false){
-  const processed = new Set();
   const king=
     pieces.find(p=>p.type==="王");
   fields =
@@ -1818,6 +1876,7 @@ function applyWarpField(piece,field){
     piece.type==="角" ||
     piece.type==="王"
 ){
+    showGuardEffect(piece);
     logGuard(piece,"ワープフィールド");
     return;
 }
@@ -1886,6 +1945,7 @@ function applyRestField(piece,field){
     piece.type==="金" ||
     piece.type==="王"
 ){
+    showGuardEffect(piece);
     logGuard(piece,"休みフィールド");
     return;
 }
@@ -1905,6 +1965,7 @@ function applyRebellionField(piece,field){
     piece.type === "王" ||
     piece.type === "賢"
   ){
+    showGuardEffect(piece);
     logGuard(piece,"反逆フィールド");
     return;
   }
@@ -1927,6 +1988,7 @@ function applyDeathField(piece,field){
     piece.type==="姫"
 ){
     if(field.team !== piece.team){
+        showGuardEffect(piece);
         logGuard(piece,"即死フィールド");
     }
     return;
@@ -2087,24 +2149,76 @@ function createRebellionField(piece,trigger=false){
 // 特殊スキル
 //========================
     
+
 function showSkillButtons(piece){
 
-  clearSkillButtons();
+    clearSkillButtons();
 
-  if(!skillUnlocked[piece.team]){
+    const button =
+        document.getElementById("skillButton");
+
+    const area =
+        document.getElementById("skillArea");
+
+    area.style.display="none";
+
+    button.onclick=()=>{
+
+        area.style.display=
+
+            area.style.display==="block"
+
+            ? "none"
+
+            : "block";
+    };
+    document.getElementById("skillArea").style.display="none";
+
+if(!skillUnlocked[piece.team]){
+
+    button.disabled=false;
+
+    button.textContent="🔒 特殊スキル";
+
+    addSkillButton(
+        "第3ラウンド以降\n味方が1体倒されると解放",
+        ()=>{},
+        false
+    );
+
     return;
-  }
+}
 
-  const area =
-  
-    document.getElementById("skillArea");
+    button.disabled=false;
+    button.textContent="特殊スキル";
 
-  area.innerHTML = "";
+    const area=
+        document.getElementById("skillArea");
+    area.innerHTML="";
+
+  const hasSkill =
+
+    ["銀","桂","角","賢"].includes(piece.type);
+
+if(!hasSkill){
+
+    button.disabled=false;
+
+    button.textContent="特殊スキル";
+
+    addSkillButton(
+        "このコマは特殊スキルを持ちません",
+        ()=>{},
+        false
+    );
+
+    return;
+}
 
   if(piece.type === "賢"){
 
     addSkillButton(
-      "ワープ配置",
+      ` ワープ配置(${piece.warpFieldUses}/3)` ,
       ()=>{
 
         skillMode="wiseWarp";
@@ -2113,10 +2227,11 @@ function showSkillButtons(piece){
         skillPiece =
           selectedPiece;
       }
+      piece.warpFieldUses>0
     );
 
     addSkillButton(
-      "休み配置",
+      ` 休み配置(${piece.restFieldUses}/3)` ,
       ()=>{
 
         skillMode ="wiseRest";
@@ -2125,24 +2240,26 @@ function showSkillButtons(piece){
         skillPiece =
           selectedPiece;
       }
+      piece.restFieldUses>0
     ); 
         
     if(isBuffed(piece)){
 
       addSkillButton(
-        "反逆配置",
+        ` 反逆配置(${piece.rebellionFieldUses}/1)` 
         ()=>{
           skillMode = "wiseRebellion";
           logSkill(piece,"反逆配置");
           skillPiece = piece;
         }
+       piece.rebellionFieldUses>0
       );
     }
   }
       
   if(piece.type === "桂"){
     addSkillButton(
-      "騎召喚",
+      ` 騎召喚(${5-piece.summonedCount}/5)` ,
       ()=>{
 
         skillMode="summonRider";
@@ -2153,29 +2270,29 @@ function showSkillButtons(piece){
 
         highlightSkillTargets(piece);
       }
+      piece.summonedCount<5
     );
   }
       
   if(piece.type === "角"){
 
-    addSkillButton(
-      "帰還ワープ",
-      ()=>{
+addSkillButton(
 
-        if(
-          piece.bishopWarpUses <= 0
-        ){
-          alert("使用回数切れ");
-          return;
-        }
+`帰還ワープ (${piece.bishopWarpUses}/2)`,
 
-        piece.bishopWarpReady = true;
-        logSkill(piece,"帰還ワープ");
+()=>{
 
-        alert(
-          "次の行動後にワープ"
-        );
-      }
+    piece.bishopWarpReady=true;
+
+    logSkill(piece,"帰還ワープ");
+
+    alert("次の行動後に2列目のランダムなマスにワープ");
+
+},
+
+piece.bishopWarpUses>0
+);
+
     );
   }
 
@@ -2220,8 +2337,35 @@ addSkillButton(
 }
 }
 
+function addSkillButton(
+    text,
+    callback,
+    enabled=true
+){
+
+    const btn=document.createElement("button");
+
+    btn.textContent=text;
+
+    btn.disabled=!enabled;
+
+    if(enabled){
+
+        btn.onclick=callback;
+    }
+
+    document
+        .getElementById("skillArea")
+        .appendChild(btn);
+}
+
 function clearSkillButtons(){
-    document.getElementById("skillArea").innerHTML = "";
+
+    const area=document.getElementById("skillArea");
+
+    area.innerHTML="";
+
+    area.style.display="none";
 }
 
 function rollSilverUnit(){
@@ -2270,7 +2414,6 @@ function highlightSkillTargets(piece){
   const cells =
   document.querySelectorAll(".cell");
 
-  // 桂
   if(piece.type === "桂"){
 
     const targetY =
@@ -2329,22 +2472,6 @@ function highlightSkillTargets(piece){
 }
 }
     
-    function addSkillButton(
-      text,
-      callback
-    ){
-      const btn =
-        document.createElement("button");
-
-      btn.textContent = text;
-
-      btn.onclick = callback;
-
-      document
-        .getElementById("skillArea")
-        .appendChild(btn);
-    }
-    
 function silverTargetClick(
   x,
   y,
@@ -2374,62 +2501,14 @@ function silverTargetClick(
     return;
   }
 
-  skillTargets.push({
-    x,
-    y
-  });
+  silverSpawnTypes = spawnTypes;
+  removePiece(skillPiece);
+  highlightRespawnSquares(skillPiece.team);
+  reviveMode = "silver";
 
-  if(
-    skillTargets.length < 2
-  ){
-
-    return;
-  }
-
-  removePiece(
-    skillPiece
-  );
-
-  for(
-    let i=0;
-    i<2;
-    i++
-  ){
-
-    pieces.push(
-
-      createPiece({
-
-        type:
-        spawnTypes[i],
-
-        team:
-        skillPiece.team,
-
-        x:
-        skillTargets[i].x,
-
-        y:
-        skillTargets[i].y,
-
-        moveType:
-        convertMoveType(
-          spawnTypes[i]
-        )
-      })
-    );
-  }
-
-  finishSkill();
-
-  render();
 }
   
-function summonRider(
-  piece,
-  x,
-  y
-){
+function summonRider(piece,x,y){
 
   if(piece.summonedCount >= 5){
 
@@ -2583,7 +2662,7 @@ function bishopReturnWarp(piece){
       Math.random()
       * candidates.length
     )];
-  const target=getPieceAt(randomX,targetY);
+ 
   piece.x = randomX;
   piece.y = targetY;
   updateFields(true);
@@ -2654,6 +2733,23 @@ function logGuard(piece,effect){
     addLog(
         `🛡 ${teamName(piece.team)}の${piece.type}は${effect}を無効化`
     );
+}
+
+function showGuardEffect(piece){
+
+    piece.guardEffect = true;
+
+    render();
+
+    setTimeout(()=>{
+
+        if(!pieces.includes(piece)) return;
+
+        piece.guardEffect = false;
+
+        render();
+
+    },3000);
 }
 
 function logSkill(piece,name){
@@ -2816,7 +2912,7 @@ function getMoveDescription(piece){
 
         case "飛":
             return isBuffed(piece)
-                ? "【強化中】たてよこ４→たてよこ*ななめ*２(2回行動)"
+                ? "【強化中】たてよこ４→たてよこななめ２(2回行動)"
                 : "たてよこ５→たてよこ１(2回行動)"; 
 
         case "金":
@@ -3096,6 +3192,14 @@ pieceDiv.classList.add("rebel");
     bottomBadge.textContent =
       "🌀"+piece.controlTurns;
   }
+
+if(piece.reflectEffect){
+    topBadge.textContent = "🪞";
+}
+
+if(piece.guardEffect){
+    topBadge.textContent = "🛡";
+}
 
   if(piece.type==="香"){
     topBadge.textContent="⚔️";
