@@ -448,3 +448,45 @@ body{
 #skillArea{
     margin-top:8px;
 }
+
+#turnPanel{
+
+    text-align:center;
+
+    margin:12px 0;
+
+    padding:12px;
+
+    border-radius:12px;
+
+    background:#f7f7f7;
+
+    border:2px solid #777;
+}
+
+#roundDisplay{
+
+    font-size:22px;
+
+    font-weight:bold;
+}
+
+#turnDisplay{
+
+    font-size:20px;
+
+    margin-top:6px;
+}
+
+#battleState{
+
+    margin-top:10px;
+
+    min-height:28px;
+
+    font-size:17px;
+
+    font-weight:bold;
+
+    color:#1d7f3d;
+}
