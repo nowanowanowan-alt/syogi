@@ -170,7 +170,7 @@ case "fast":
 
     break;
 
-case "15":
+case "large":
 
     BOARD_SIZE=15;
 
@@ -862,11 +862,11 @@ function processRoundEnd(){
       }
     }
 
-if(fieldBreakTurns>0){
-    fieldBreakTurns--;
 }
 
-  }
+  if(fieldBreakTurns>0){
+    fieldBreakTurns--;
+}
   
   fields =
 fields.filter(field=>{
@@ -2538,7 +2538,7 @@ function applyGameMode(mode){
         case "large":
 
             TURN_ACTIONS = 1;
-            boardSize = 16;
+            boardSize = 15;
             break;
     }
 
@@ -2776,7 +2776,6 @@ if(isDraftPhase){
 }
 
   selectedDraftPiece = null;
- document.getElementById("draftBackBtn").style.display= "none";
 
   draftPickIndex++;
 
