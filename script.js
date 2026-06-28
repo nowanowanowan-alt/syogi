@@ -230,10 +230,12 @@ pieces.push(
 
 turnActionsLeft = TURN_ACTIONS;
 
-  render();
+document.getElementById("modeSelect").style.display = "block";
 
 document.getElementById("draftBackBtn").onclick =
     cancelDraftPlacement;
+
+render();
 
 }
   
@@ -469,20 +471,20 @@ pieces.some(
 
 if(reviveMode==="princess"){
 
-    if(highlights.some(h=>h.x===x && h.y===y)){
-
-        reviveTarget.x=x;
-        reviveTarget.y=y;
-
-        pieces.push(reviveTarget);
-
-        reviveMode=false;
-        reviveTarget=null;
-
-        highlights=[];
-
-        render();
+    if(!highlights.some(h=>h.x===x&&h.y===y)){
+        return;
     }
+
+    reviveTarget.x=x;
+    reviveTarget.y=y;
+
+    pieces.push(reviveTarget);
+
+    reviveMode=false;
+    reviveTarget=null;
+    highlights=[];
+
+    render();
     return;
 }
 
@@ -686,6 +688,8 @@ function handleSkillClick(x,y){
 }
 
 function movePiece(piece,x,y){
+    const oldX = piece.x;
+    const oldY = piece.y;
     const target = getPieceAt(x,y);
     if( target && ownerOf(target)!==ownerOf(piece)){
         capturePiece(piece,target);
@@ -694,10 +698,16 @@ function movePiece(piece,x,y){
     piece.y = y;
     updateFields(false);
     const steppedFields =
-        fields.filter(f=>f.x===piece.x && f.y===piece.y);
-    for(const field of steppedFields){
+    fields.filter(f=>f.x===piece.x && f.y===piece.y);
+
+for(const field of steppedFields){
+
+    const wasInside = isInsideField(field, oldX, oldY);
+
+    if(!wasInside){
         triggerField(field);
     }
+}
     
     if(piece.type==="賢"){
         applyWiseBuff(piece);
@@ -833,10 +843,11 @@ function processRoundEnd(){
   for(const p of [...pieces]){
 
     if(p.restTurns > 0){
-
       p.restTurns--;
     }
-
+    if(p.buffTurns > 0){
+      p.buffTurns--;
+    }
     if(
       p.turnLife !== null
     ){
@@ -1037,6 +1048,19 @@ function inside(x,y){
     y >= 0 &&
     y < BOARD_SIZE
   );
+}
+
+function isInsideField(field, x, y){
+
+    return fields.some(f=>
+
+        f.ownerId===field.ownerId &&
+        f.type===field.type &&
+        f.x===x &&
+        f.y===y
+
+    );
+
 }
 
 function generateMoves(piece){
@@ -1882,6 +1906,9 @@ function createRebellionField(piece,trigger=false){
 
 function showSkillButtons(piece){
 
+    const button = document.getElementById("skillButton");
+    button.style.display = "inline-block";
+
     clearSkillButtons();
 
     const button =
@@ -2159,6 +2186,7 @@ function clearSkillButtons(){
     area.innerHTML="";
 
     area.style.display="none";
+    document.getElementById("skillButton").style.display="none";
 }
 
 function rollSilverUnit(){
@@ -2774,13 +2802,13 @@ if(isDraftPhase){
     }
 
     if(draftRound >= 4){
-      
-      isDraftPhase = false;
-      document.getElementById("draftUI").style.display = "none";
-      currentTurn = "black";
-      alert("ゲーム開始！");
-      render();
-      return;
+        isDraftPhase = false;
+document.getElementById("draftUI").style.display = "none";
+document.getElementById("modeSelect").style.display = "none";
+currentTurn = "black";
+alert("ゲーム開始！");
+render();
+return;
     }
   }
 
