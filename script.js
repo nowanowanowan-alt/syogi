@@ -1,10 +1,20 @@
-const BOARD_SIZE = 9;
-
 const boardEl =
 document.getElementById("board");
 
 const turnDisplay =
 document.getElementById("turnDisplay");
+
+let gameMode = "normal";
+
+let turnActionsLeft = 1;
+
+let TURN_ACTIONS = 1;
+
+let movedPieces = [];
+
+let boardSize = 9;
+
+let BOARD_SIZE = 9;
 
 let currentTurn = "black";
 
@@ -135,6 +145,40 @@ function createPiece(data){
 }
 
 function setupGame(){
+  const selectedMode =
+document.querySelector(
+'input[name="mode"]:checked'
+).value;
+
+gameMode = selectedMode;
+
+switch(gameMode){
+
+case "normal":
+
+    BOARD_SIZE=9;
+
+    TURN_ACTIONS=1;
+
+    break;
+
+case "fast":
+
+    BOARD_SIZE=9;
+
+    TURN_ACTIONS=2;
+
+    break;
+
+case "15":
+
+    BOARD_SIZE=15;
+
+    TURN_ACTIONS=1;
+
+    break;
+}
+
   pieces = [];
 
   fields = [];
@@ -163,8 +207,8 @@ skillUnlocked = {
   createPiece({
     type:"王",
     team:"black",
-    x:4,
-    y:8,
+    x:Math.floor(BOARD_SIZE/2),
+    y:BOARD_SIZE-1,
     moveType:"king"
   })
 );
@@ -178,11 +222,13 @@ pieces.push(
   createPiece({
     type:"玉",
     team:"white",
-    x:4,
+    x:Math.floor(BOARD_SIZE/2),
     y:0,
     moveType:"jewel"
   })
 );
+
+turnActionsLeft = TURN_ACTIONS;
 
   render();
 
@@ -341,317 +387,6 @@ function ownerName(team){
         : "🔴 赤";
 }
 
-//========================
-// ドラフト
-//========================
-
-function startDraft(){
-
-  blackDraft = [];
-  whiteDraft = [];
-  
-  draftRound = 1;
-  draftPickIndex = 0;
-  
-  placingDraftPiece = false;
-  selectedDraftPiece = null;
-
-  setDraftOrder();
-  
-  currentDraftChoices =
-    getCurrentDraftChoices();
-  
-  showDraftChoices();
-}
-
-function setDraftOrder(){
-
-  if(draftRound === 1){
-
-    draftOrder = [
-      "black",
-      "white"
-    ];
-  }
-
-  else if(draftRound === 2){
-
-    draftOrder = [
-      "black",
-      "white"
-    ];
-  }
-
-  else{
-
-    draftOrder = [
-      "white",
-      "black"
-    ];
-  }
-}
-
-function showDraftChoices(){
-
-  const player =
-  draftOrder[
-    draftPickIndex
-  ];
-
-  const choices =
-    currentDraftChoices;
-
-  const area =
-  document
-  .getElementById(
-    "draftButtons"
-  );
-
-  area.innerHTML = "";
-
-document.getElementById("draftSelected").textContent = "";
-
-document.getElementById("draftBackBtn").style.display = "none";
-
-  choices.forEach(type=>{
-
-    const btn =
-    document.createElement(
-      "button"
-    );
-
-    btn.textContent =
-    type;
-
-btn.dataset.type = type;
-
-btn.onmouseenter = ()=>{
-
-    const preview = createPiece({
-        type,
-        team:player,
-        moveType:convertMoveType(type)
-    });
-
-    updatePieceInfo(
-      createPreviewPiece(type,player)
-    );
-};
-
-btn.onclick = ()=>{
-
-    document
-      .querySelectorAll("#draftButtons button")
-      .forEach(b=>b.classList.remove("selected"));
-
-    btn.classList.add("selected");
-
-    pickDraftPiece(player,type);
-};
-
-    area.appendChild(btn);
-  });
-
-  turnDisplay.textContent =
-    `第${draftRound}ラウンド　${player} のピック`;
-
-updatePieceInfo(
-    createPreviewPiece(
-        choices[0],
-        player
-    )
-);
-
-}
-  
-
-function createPreviewPiece(type,team){
-
-    return{
-
-        type,
-        team,
-        moveType:convertMoveType(type),
-
-        killCount:0,
-        restTurns:0,
-        controlTurns:0,
-        buffTurns:0,
-
-        summonedCount:0,
-        bishopWarpUses:2,
-        warpFieldUses:3,
-        restFieldUses:3,
-        rebellionFieldUses:1
-    };
-}
-
-function pickDraftPiece(player,type){
-
-  selectedDraftPiece = type;
-
-  placingDraftPiece = true;
- document.getElementById("draftBackBtn").style.display= "block";
-
-document.getElementById("draftSelected").textContent =
-    `${type} を選択中`;
-
-updatePieceInfo(
-    createPreviewPiece(type, player)
-);
-
-document.getElementById("draftUI").style.visibility="hidden";
-
-document.getElementById("draftBackBtn").style.display = "block";
-
-  currentTurn = player;
-
-  document
-    .querySelectorAll("#draftButtons button")
-    .forEach(b=>b.classList.remove("selected"));
-
-  render();
-}
-  
-function getCurrentDraftChoices(){
-
-  if(draftRound === 1){
-
-    return [
-      "歩",
-      "角",
-      "桂"
-    ];
-  }
-
-  if(draftRound === 2){
-
-    return randomThree([
-      "香",
-      "砲",
-      "姫",
-      "賢"
-    ]);
-  }
-
-  if(draftRound === 3){
-
-    return randomThree([
-      "銀",
-      "桂",
-      "飛",
-      "金"
-    ]);
-  }
-
-  return [];
-}
-
-function placeDraftPiece(type,x,y,team){
-
-  pieces.push(
-
-    createPiece({
-
-      type,
-      team,
-      x,
-      y,
-      moveType:
-      convertMoveType(type)
-    })
-  );
-
-  placingDraftPiece = false;
-
-document.getElementById("draftBackBtn").style.display = "none";
-
-if(isDraftPhase){
-    document.getElementById("draftUI").style.visibility="visible";
-}
-
-  selectedDraftPiece = null;
- document.getElementById("draftBackBtn").style.display= "none";
-
-  draftPickIndex++;
-
-  if(draftPickIndex >= draftOrder.length){
-
-    draftPickIndex = 0;
-
-    draftRound++;
-
-    if(draftRound < 4){
-      
-      setDraftOrder();
-      currentDraftChoices =
-        getCurrentDraftChoices();
-    }
-
-    if(draftRound >= 4){
-      
-      isDraftPhase = false;
-      document.getElementById("draftUI").style.display = "none";
-      currentTurn = "black";
-      alert("ゲーム開始！");
-      render();
-      return;
-    }
-  }
-
-  render();
-
-  showDraftChoices();
-}
-
-function cancelDraftPlacement(){
-
-    placingDraftPiece = false;
-    selectedDraftPiece = null;
-
-    document.getElementById("draftUI").style.visibility = "visible";
-
-    render();
-
-    showDraftChoices();
-}
-    
-function canPlaceDraftPiece(
-  x,
-  y
-){
-
-  if(draftRound === 2){
-
-    return currentTurn==="black"
-      ? y===8
-      : y===0;
-  }
-
-  return currentTurn==="black"
-    ? y===7
-    : y===1;
-}
-
-function randomThree(array){
-
-  const pool = [...array];
-
-  const result = [];
-
-  while(result.length < 3){
-
-    const index = Math.floor(
-      Math.random() * pool.length
-    );
-
-    result.push(
-      pool.splice(index,1)[0]
-    );
-  }
-
-  return result;
-}
     
 //========================
 // 通常ゲーム
@@ -844,6 +579,12 @@ if(
 }
 
     if(ownerOf(clickedPiece)===currentTurn){
+
+if(movedPieces.includes(clickedPiece.id) && clickedPiece.remainingActions===2){
+    alert("このコマはこのターンすでに行動しています");
+    return;
+}
+
       selectedPiece = clickedPiece;
       selectedCell = null;
       updatePieceInfo(clickedPiece);
@@ -958,12 +699,12 @@ function movePiece(piece,x,y){
   }
 
   if(piece.type==="王"){
-    kingRestLine=Math.floor(Math.random()*9);
+    kingRestLine=Math.floor(Math.random()*BOARD_SIZE);
 logKingRest(piece,kingRestLine);
     kingRestRow=null;
     if(isBuffed(piece)){
       do{
-        kingRestRow=Math.floor(Math.random()*9);
+        kingRestRow=Math.floor(Math.random()*BOARD_SIZE);
 logKingRest(piece,kingRestRow);
 
       }while(kingRestRow===kingRestLine);
@@ -978,8 +719,17 @@ logKingRest(piece,kingRestRow);
       bishopReturnWarp(piece);
       render();
       setTimeout(()=>{
-        endTurn();
-      },400);
+
+    turnActionsLeft--;
+
+    if(turnActionsLeft>0){
+        clearSkillButtons();
+        render();
+        alert(`あと${turnActionsLeft}回行動できます`);
+        return;
+    }
+    endTurn();
+},400);
     },400);
     return;
   }else{
@@ -1014,18 +764,63 @@ return;
     }
 }
   
-  if(wiseMoveAfterSkill){
-    wiseMoveAfterSkill = false;
-    endTurn();
-    return;
-  }
+ if(wiseMoveAfterSkill){
 
-  selectedPiece = null;
-  selectedCell = null;
-  endTurn();
+    wiseMoveAfterSkill = false;
+
+    if(!movedPieces.includes(piece.id)){
+        movedPieces.push(piece.id);
+    }
+
+    selectedPiece = null;
+    selectedCell = null;
+
+    turnActionsLeft--;
+
+    if(turnActionsLeft>0){
+
+        render();
+
+        alert(`あと${turnActionsLeft}体行動できます`);
+
+        return;
+    }
+
+    endTurn();
+
+    return;
+}
+
+    endTurn();
+
+    return;
+}
+
+if(!movedPieces.includes(piece.id)){
+    movedPieces.push(piece.id);
+}
+
+selectedPiece = null;
+selectedCell = null;
+
+turnActionsLeft--;
+
+if(turnActionsLeft > 0){
+
+    render();
+
+    alert(`あと${turnActionsLeft}体行動できます`);
+
+    return;
+}
+
+endTurn();
 }
 
 function endTurn(){
+
+turnActionsLeft = TURN_ACTIONS;
+movedPieces = [];
 
   clearSkillButtons();
 
@@ -1407,7 +1202,7 @@ function riderMoves(piece){
   ? -1
   : 1;
 
-  for(let i=1;i<=9;i++){
+  for(let i=1;i<=BOARD_SIZE;i++){
 
     const x = piece.x;
     const y = piece.y + dir*i;
@@ -1633,17 +1428,17 @@ function highlightRespawnSquares(team){
 
     highlights = [];
 
-    const first = team === "black" ? 8 : 0;
-    const second = team === "black" ? 7 : 1;
+    const first = team === "black" ? BOARD_SIZE-1 : 0;
+    const second = team === "black" ? BOARD_SIZE-2 : 1;
 
-    for(let x=0;x<9;x++){
+    for(let x=0;x<BOARD_SIZE;x++){
         if(!getPieceAt(x,first)){
             highlights.push({x,y:first});
         }
     }
 
     if(highlights.length===0){
-        for(let x=0;x<9;x++){
+        for(let x=0;x=BOARD_SIZE;x++){
             if(!getPieceAt(x,second)){
                 highlights.push({x,y:second});
             }
@@ -1743,7 +1538,7 @@ function updateFields(trigger=false){
   }
 
  if(kingRestLine!==null && king){
-      for(let x=0;x<9;x++){
+      for(let x=0;x<BOARD_SIZE;x++){
         const field={
           type:"restField",
           team:king.team,
@@ -1756,7 +1551,7 @@ function updateFields(trigger=false){
         }
       }
       if(isBuffed(king)){
-        for(let x=0;x<9;x++){
+        for(let x=0;x<BOARD_SIZE;x++){
           const field={
             type:"restField",
             team:king.team,
@@ -2349,7 +2144,16 @@ function finishSkill(){
 
     skillPiece = null;
 
-    endTurn();
+    turnActionsLeft--;
+
+if(turnActionsLeft>0){
+
+    render();
+
+    return;
+}
+
+endTurn();
   
   }
 
@@ -2463,7 +2267,7 @@ function highlightSkillTargets(piece){
 
     const targetY =
     piece.team === "black"
-    ? 8
+    ? BOARD_SIZE-1
     : 0;
 
     cells.forEach(cell=>{
@@ -2600,7 +2404,7 @@ function summonRider(piece,x,y){
   // 黒は最下段
   if(
     piece.team === "black" &&
-    y !== 8
+    y !== BOARD_SIZE-1
   ){
 
     alert(
@@ -2723,7 +2527,7 @@ function bishopReturnWarp(piece){
   );
   const targetY =
     piece.team === "black"
-    ? 7
+    ? BOARD_SIZE-2
     : 1;
   const candidates = [];
   for(let x=0;x<9;x++){
@@ -2744,6 +2548,352 @@ function bishopReturnWarp(piece){
   piece.x = randomX;
   piece.y = targetY;
   updateFields(true);
+}
+
+
+//========================
+// モード選択
+//========================
+
+function applyGameMode(mode){
+
+    gameMode = mode;
+
+    switch(mode){
+
+        case "normal":
+
+            TURN_ACTIONS = 1;
+            boardSize = 9;
+            break;
+
+        case "fast":
+
+            TURN_ACTIONS = 2;
+            boardSize = 9;
+            break;
+
+        case "large":
+
+            TURN_ACTIONS = 1;
+            boardSize = 16;
+            break;
+    }
+
+    BOARD_SIZE = boardSize;
+}
+
+
+//========================
+// ドラフト
+//========================
+
+function startDraft(){
+
+  blackDraft = [];
+  whiteDraft = [];
+  
+  draftRound = 1;
+  draftPickIndex = 0;
+  
+  placingDraftPiece = false;
+  selectedDraftPiece = null;
+
+  setDraftOrder();
+  
+  currentDraftChoices =
+    getCurrentDraftChoices();
+  
+  showDraftChoices();
+}
+
+function setDraftOrder(){
+
+  if(draftRound === 1){
+
+    draftOrder = [
+      "black",
+      "white"
+    ];
+  }
+
+  else if(draftRound === 2){
+
+    draftOrder = [
+      "black",
+      "white"
+    ];
+  }
+
+  else{
+
+    draftOrder = [
+      "white",
+      "black"
+    ];
+  }
+}
+
+function showDraftChoices(){
+
+  const player =
+  draftOrder[
+    draftPickIndex
+  ];
+
+  const choices =
+    currentDraftChoices;
+
+  const area =
+  document
+  .getElementById(
+    "draftButtons"
+  );
+
+  area.innerHTML = "";
+
+document.getElementById("draftSelected").textContent = "";
+
+document.getElementById("draftBackBtn").style.display = "none";
+
+  choices.forEach(type=>{
+
+    const btn =
+    document.createElement(
+      "button"
+    );
+
+    btn.textContent =
+    type;
+
+btn.dataset.type = type;
+
+btn.onmouseenter = ()=>{
+
+    const preview = createPiece({
+        type,
+        team:player,
+        moveType:convertMoveType(type)
+    });
+
+    updatePieceInfo(
+      createPreviewPiece(type,player)
+    );
+};
+
+btn.onclick = ()=>{
+
+    document
+      .querySelectorAll("#draftButtons button")
+      .forEach(b=>b.classList.remove("selected"));
+
+    btn.classList.add("selected");
+
+    pickDraftPiece(player,type);
+};
+
+    area.appendChild(btn);
+  });
+
+  turnDisplay.textContent =
+    `第${draftRound}ラウンド　${player} のピック`;
+
+updatePieceInfo(
+    createPreviewPiece(
+        choices[0],
+        player
+    )
+);
+
+}
+  
+
+function createPreviewPiece(type,team){
+
+    return{
+
+        type,
+        team,
+        moveType:convertMoveType(type),
+
+        killCount:0,
+        restTurns:0,
+        controlTurns:0,
+        buffTurns:0,
+
+        summonedCount:0,
+        bishopWarpUses:2,
+        warpFieldUses:3,
+        restFieldUses:3,
+        rebellionFieldUses:1
+    };
+}
+
+function pickDraftPiece(player,type){
+
+  selectedDraftPiece = type;
+
+  placingDraftPiece = true;
+ document.getElementById("draftBackBtn").style.display= "block";
+
+document.getElementById("draftSelected").textContent =
+    `${type} を選択中`;
+
+updatePieceInfo(
+    createPreviewPiece(type, player)
+);
+
+document.getElementById("draftUI").style.visibility="hidden";
+
+document.getElementById("draftBackBtn").style.display = "block";
+
+  currentTurn = player;
+
+  document
+    .querySelectorAll("#draftButtons button")
+    .forEach(b=>b.classList.remove("selected"));
+
+  render();
+}
+  
+function getCurrentDraftChoices(){
+
+  if(draftRound === 1){
+
+    return [
+      "歩",
+      "角",
+      "桂"
+    ];
+  }
+
+  if(draftRound === 2){
+
+    return randomThree([
+      "香",
+      "砲",
+      "姫",
+      "賢"
+    ]);
+  }
+
+  if(draftRound === 3){
+
+    return randomThree([
+      "銀",
+      "桂",
+      "飛",
+      "金"
+    ]);
+  }
+
+  return [];
+}
+
+function placeDraftPiece(type,x,y,team){
+
+  pieces.push(
+
+    createPiece({
+
+      type,
+      team,
+      x,
+      y,
+      moveType:
+      convertMoveType(type)
+    })
+  );
+
+  placingDraftPiece = false;
+
+document.getElementById("draftBackBtn").style.display = "none";
+
+if(isDraftPhase){
+    document.getElementById("draftUI").style.visibility="visible";
+}
+
+  selectedDraftPiece = null;
+ document.getElementById("draftBackBtn").style.display= "none";
+
+  draftPickIndex++;
+
+  if(draftPickIndex >= draftOrder.length){
+
+    draftPickIndex = 0;
+
+    draftRound++;
+
+    if(draftRound < 4){
+      
+      setDraftOrder();
+      currentDraftChoices =
+        getCurrentDraftChoices();
+    }
+
+    if(draftRound >= 4){
+      
+      isDraftPhase = false;
+      document.getElementById("draftUI").style.display = "none";
+      currentTurn = "black";
+      alert("ゲーム開始！");
+      render();
+      return;
+    }
+  }
+
+  render();
+
+  showDraftChoices();
+}
+
+function cancelDraftPlacement(){
+
+    placingDraftPiece = false;
+    selectedDraftPiece = null;
+
+    document.getElementById("draftUI").style.visibility = "visible";
+
+    render();
+
+    showDraftChoices();
+}
+    
+function canPlaceDraftPiece(
+  x,
+  y
+){
+
+  if(draftRound === 2){
+
+    return currentTurn==="black"
+      ? y===BOARD_SIZE-1
+      : y===0;
+  }
+
+  return currentTurn==="black"
+    ? y===BOARD_SIZE-2
+    : y===1;
+}
+
+function randomThree(array){
+
+  const pool = [...array];
+
+  const result = [];
+
+  while(result.length < 3){
+
+    const index = Math.floor(
+      Math.random() * pool.length
+    );
+
+    result.push(
+      pool.splice(index,1)[0]
+    );
+  }
+
+  return result;
 }
 
 
