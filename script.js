@@ -241,22 +241,14 @@ render();
   
 function render(){
   boardEl.innerHTML = "";
-  document.getElementById("roundDisplay").textContent =
-    `Round ${roundCount}`;
-
-document.getElementById("turnDisplay").textContent =
-    ownerName(currentTurn)+" のターン";
-
-const state =
-document.getElementById("battleState");
+  let status =
+`Round ${roundCount}　${ownerName(currentTurn)}のターン`;
 
 if(fieldBreakTurns>0){
-    state.innerHTML=
-        `🌿 戦場浄化中<br>
-        あと ${fieldBreakTurns} ラウンド`;
-}else{
-    state.textContent="";
+    status += `　🌿戦場浄化中(${fieldBreakTurns})`;
 }
+
+document.getElementById("gameStatus").textContent = status;
 
   for(let y=0;y<BOARD_SIZE;y++){
     for(let x=0;x<BOARD_SIZE;x++){
@@ -3424,5 +3416,15 @@ document.getElementById("draftBackBtn").onclick = () => {
 
     render();
 };
+
+document.addEventListener(
+    "contextmenu",
+    e => e.preventDefault()
+);
+
+document.addEventListener(
+    "selectstart",
+    e => e.preventDefault()
+);
 
 setupGame();
