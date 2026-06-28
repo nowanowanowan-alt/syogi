@@ -1903,9 +1903,6 @@ function showSkillButtons(piece){
 
     clearSkillButtons();
 
-    const button =
-        document.getElementById("skillButton");
-
     const area =
         document.getElementById("skillArea");
 
