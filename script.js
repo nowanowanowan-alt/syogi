@@ -686,194 +686,141 @@ function handleSkillClick(x,y){
 }
 
 function movePiece(piece,x,y){
-  const target = getPieceAt(x,y);
-  if( target && ownerOf(target)!==ownerOf(piece)){
-    capturePiece(piece,target);
-  }
-  piece.x = x;
-  piece.y = y;
-  logMove(piece,x,y);
-
-  if(piece.type==="賢"){
-    applyWiseBuff(piece);
-  }
-
-  if(piece.type==="王"){
-    kingRestLine=Math.floor(Math.random()*BOARD_SIZE);
-logKingRest(piece,kingRestLine);
-    kingRestRow=null;
-    if(isBuffed(piece)){
-      do{
-        kingRestRow=Math.floor(Math.random()*BOARD_SIZE);
-logKingRest(piece,kingRestRow);
-
-      }while(kingRestRow===kingRestLine);
+    const target = getPieceAt(x,y);
+    if( target && ownerOf(target)!==ownerOf(piece)){
+        capturePiece(piece,target);
     }
+    piece.x = x;
+    piece.y = y;
     updateFields(false);
-    triggerFieldsCreatedBy(piece.id);
-  }
-  
-  if(piece.type === "角" && piece.bishopWarpReady){
-    render();
-    setTimeout(()=>{
-      bishopReturnWarp(piece);
-      render();
-      setTimeout(()=>{
-
-    turnActionsLeft--;
-
-    if(turnActionsLeft>0){
-        clearSkillButtons();
+    const steppedFields =
+        fields.filter(f=>f.x===piece.x && f.y===piece.y);
+    for(const field of steppedFields){
+        triggerField(field);
+    }
+    
+    if(piece.type==="賢"){
+        applyWiseBuff(piece);
+    }
+    if(piece.type==="王"){
+        kingRestLine=Math.floor(Math.random()*BOARD_SIZE);
+        logKingRest(piece,kingRestLine);
+        kingRestRow=null;
+        if(isBuffed(piece)){
+            do{
+                kingRestRow=Math.floor(Math.random()*BOARD_SIZE);
+                logKingRest(piece,kingRestRow);
+            }while(kingRestRow===kingRestLine);
+        }
+        updateFields(false);
+        triggerFieldsCreatedBy(piece.id);
+    }
+    if(piece.type === "角" && piece.bishopWarpReady){
         render();
-        alert(`あと${turnActionsLeft}回行動できます`);
+        setTimeout(()=>{
+            bishopReturnWarp(piece);
+            render();
+            setTimeout(()=>{
+                turnActionsLeft--;
+                if(turnActionsLeft>0){
+                    clearSkillButtons();
+                    render();
+                    alert(`あと${turnActionsLeft}回行動できます`);
+                    return;
+                }
+                endTurn();
+            },400);
+        },400);
+        return;
+    }else{
+        updateFields(false);
+        triggerFieldsCreatedBy(piece.id);
+    }
+    if(piece.type === "飛"){
+        piece.remainingActions--;
+        if(
+            piece.remainingActions > 0 &&
+            piece.restTurns === 0 &&
+            piece.controlTurns === 0
+        ){
+            selectedPiece = piece;
+            selectedCell = {
+                x: piece.x,
+                y: piece.y
+            };
+            render();
+            highlightMoves(piece);
+            showSkillButtons(piece);
+            return;
+        }
+    }
+  
+    if(wiseMoveAfterSkill){
+        wiseMoveAfterSkill = false;
+        if(!movedPieces.includes(piece.id)){
+            movedPieces.push(piece.id);
+        }
+        
+        selectedPiece = null;
+        selectedCell = null;
+        turnActionsLeft--;
+        if(turnActionsLeft>0){
+            render();
+            alert(`あと${turnActionsLeft}体行動できます`);
+            return;
+        }
+        endTurn();
         return;
     }
     endTurn();
-},400);
-    },400);
     return;
-  }else{
-    updateFields(false);
-    triggerFieldsCreatedBy(piece.id);
-//    for(const field of fields){
-//      triggerField(field);
-//    }
-  }
-  
-
-if(piece.type === "飛"){
-
-    piece.remainingActions--;
-
-    if(
-        piece.remainingActions > 0 &&
-        piece.restTurns === 0 &&
-        piece.controlTurns === 0
-    ){
-        selectedPiece = piece;
-selectedCell = {
-    x: piece.x,
-    y: piece.y
-};
-
-render();
-highlightMoves(piece);
-showSkillButtons(piece);
-
-return;
-    }
-}
-  
- if(wiseMoveAfterSkill){
-
-    wiseMoveAfterSkill = false;
-
-    if(!movedPieces.includes(piece.id)){
-        movedPieces.push(piece.id);
-    }
-
-    selectedPiece = null;
-    selectedCell = null;
-
-    turnActionsLeft--;
-
-    if(turnActionsLeft>0){
-
-        render();
-
-        alert(`あと${turnActionsLeft}体行動できます`);
-
-        return;
-    }
-
-    endTurn();
-
-    return;
-}
-
-    endTurn();
-
-    return;
-}
-
-if(!movedPieces.includes(piece.id)){
-    movedPieces.push(piece.id);
-}
-
-selectedPiece = null;
-selectedCell = null;
-
-turnActionsLeft--;
-
-if(turnActionsLeft > 0){
-
-    render();
-
-    alert(`あと${turnActionsLeft}体行動できます`);
-
-    return;
-}
-
-endTurn();
 }
 
 function endTurn(){
+    turnActionsLeft = TURN_ACTIONS;
+    movedPieces = [];
+    clearSkillButtons();
 
-turnActionsLeft = TURN_ACTIONS;
-movedPieces = [];
-
-  clearSkillButtons();
-
-  const oldTurn =
-  currentTurn;
-
-  currentTurn =
-  currentTurn === "black"
-  ? "white"
-  : "black";
-
-  selectedPiece = null;
-  selectedCell = null;
-
-  if(
-    oldTurn === "white" &&
-    currentTurn === "black"
-  ){
-
-    processRoundEnd();
-  }
-
-if(!canTeamAct(currentTurn)){
-
-    addLog(`⏭ ${teamName(currentTurn)}は行動できる駒がないためターンをパス`);
-
-    const skipped = currentTurn;
-
+    const oldTurn = currentTurn;
     currentTurn =
-        currentTurn==="black"
+        currentTurn === "black"
         ? "white"
         : "black";
-
-    if(skipped==="white"){
+    
+    selectedPiece = null;
+    selectedCell = null;
+    
+    if(
+        oldTurn === "white" &&
+        currentTurn === "black"
+    ){
         processRoundEnd();
     }
-}
-  
-  for(const piece of pieces){
-    if(piece.type==="飛"){
-        piece.remainingActions=2;
+    
+    if(!canTeamAct(currentTurn)){
+        addLog(`⏭ ${teamName(currentTurn)}は行動できる駒がないためターンをパス`);
+        const skipped = currentTurn;
+        currentTurn =
+            currentTurn==="black"
+            ? "white"
+            : "black";
+        
+        if(skipped==="white"){
+            processRoundEnd();
+        }
     }
-  }
   
-  selectedPiece = null;
-
-  updatePieceInfo(null);
-
-  updateFields();
-
-  updateSkillUnlock();
-
-  render();
+    for(const piece of pieces){
+        if(piece.type==="飛"){
+            piece.remainingActions=2;
+        }
+    }
+    
+    selectedPiece = null;
+    updatePieceInfo(null);
+    updateFields();
+    updateSkillUnlock();
+    render();
 }
 
 function processRoundEnd(){
@@ -1438,7 +1385,7 @@ function highlightRespawnSquares(team){
     }
 
     if(highlights.length===0){
-        for(let x=0;x=BOARD_SIZE;x++){
+        for(let x=0;x<BOARD_SIZE;x++){
             if(!getPieceAt(x,second)){
                 highlights.push({x,y:second});
             }
@@ -1506,66 +1453,61 @@ function triggerFieldsCreatedBy(ownerId){
 }
 
 function updateFields(trigger=false){
-  const king=
-    pieces.find(p=>p.type==="王");
-  fields =
-    fields.filter(
-      f=>f.ownerId
-    );
-  for(const piece of pieces){
-    if(
-      piece.type === "角" &&
-      isBuffed(piece)
-    ){
-      createRadiusField(piece,1,"warpField",trigger);
+    if(fieldBreakTurns>0){
+        fields=[];
+        return;
     }
-    if(
-      piece.type === "騎" &&
-      isBuffed(piece)
-    ){
-      createRadiusField(piece,1,"warpField",trigger);
-    }
-    if(piece.type === "砲"){
-      createCannonField(piece,trigger);
-    }
-    if(piece.type === "王"){
-      createRadiusField(piece,1,"deathField",trigger);
-      createKingWarpField(piece,trigger);
-    }
-    if(piece.type === "玉"){
-      createRebellionField(piece,trigger);
-    }
-  }
-
- if(kingRestLine!==null && king){
-      for(let x=0;x<BOARD_SIZE;x++){
-        const field={
-          type:"restField",
-          team:king.team,
-          x,
-          y:kingRestLine,
-          ownerId: king.id
-        };
-        fields.push(field);if(trigger){
-          triggerField(field);
+    const king=
+        pieces.find(p=>p.type==="王");
+    fields =
+        fields.filter(f=>f.ownerId);
+    for(const piece of pieces){
+        if(piece.type === "角" && isBuffed(piece)){
+            createRadiusField(piece,1,"warpField",trigger);
         }
-      }
-      if(isBuffed(king)){
+        if(piece.type === "騎" && isBuffed(piece)){
+            createRadiusField(piece,1,"warpField",trigger);
+        }
+        if(piece.type === "砲"){
+            createCannonField(piece,trigger);
+        }
+        if(piece.type === "王"){
+            createRadiusField(piece,1,"deathField",trigger);
+            createKingWarpField(piece,trigger);
+        }
+        if(piece.type === "玉"){
+            createRebellionField(piece,trigger);
+        }
+    }
+    
+    if(kingRestLine!==null && king){
         for(let x=0;x<BOARD_SIZE;x++){
-          const field={
-            type:"restField",
-            team:king.team,
-            x,
-            y:kingRestRow,
-            ownerId: king.id
-          };
-          fields.push(field);if(trigger){
-            triggerField(field);
-          }
+            const field={
+                type:"restField",
+                team:king.team,
+                x,
+                y:kingRestLine,
+                ownerId: king.id
+            };
+            fields.push(field);if(trigger){
+                triggerField(field);
+            }
         }
-      }
+        if(isBuffed(king)){
+            for(let x=0;x<BOARD_SIZE;x++){
+                const field={
+                    type:"restField",
+                    team:king.team,
+                    x,
+                    y:kingRestRow,
+                    ownerId: king.id
+                };
+                fields.push(field);if(trigger){
+                    triggerField(field);
+                }
+            }
+        }
     }
-
 }
 
 function applyWiseBuff(wise){
@@ -1656,7 +1598,7 @@ function reflectField(field, princess){
 
 function applyWarpField(piece,field){
 
-  if(field.team===piece.team){
+  if(field.team===ownerOf(piece)){
     return;
   }
 
@@ -1723,7 +1665,7 @@ function applyWarpField(piece,field){
     
 function applyRestField(piece,field){ 
   
-  if(field.team===piece.team){
+  if(field.team===ownerOf(piece)){
     return;
   }
   
@@ -1745,7 +1687,7 @@ function applyRestField(piece,field){
     
 function applyRebellionField(piece,field){
   
-  if(field.team===piece.team){
+  if(field.team===ownerOf(piece)){
     return;
   }
   
@@ -1783,7 +1725,7 @@ function applyDeathField(piece,field){
 }
 
   if(
-    piece.team === field.team
+    ownerOf(piece)==field.team
     ){
     return;
   }
@@ -1984,7 +1926,7 @@ if(!skillUnlocked[piece.team]){
 
   const hasSkill =
 
-    ["銀","桂","角","賢"].includes(piece.type);
+    ["銀","香","桂","角","賢"].includes(piece.type);
 
 if(!hasSkill){
 
@@ -2530,7 +2472,7 @@ function bishopReturnWarp(piece){
     ? BOARD_SIZE-2
     : 1;
   const candidates = [];
-  for(let x=0;x<9;x++){
+  for(let x=0;x<BOARD_SIZE;x++){
     if(!getPieceAt(x,targetY)){
       candidates.push(x);
     }
@@ -2547,7 +2489,7 @@ function bishopReturnWarp(piece){
  
   piece.x = randomX;
   piece.y = targetY;
-  updateFields(true);
+  updateFields();
 }
 
 
@@ -2918,12 +2860,6 @@ function addLog(text){
 
 function teamName(team){
     return team==="black" ? "黒" : "赤";
-}
-
-function logMove(piece,x,y){
-    addLog(
-        `▶ ${teamName(piece.team)}の${piece.type}が(${x},${y})へ移動`
-    );
 }
 
 function logCapture(attacker,target){
