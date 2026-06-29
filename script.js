@@ -464,6 +464,7 @@ pieces.some(
 if(reviveMode==="princess"){
 
     if(!highlights.some(h=>h.x===x&&h.y===y)){
+        render();
         return;
     }
 
@@ -702,8 +703,14 @@ for(const field of steppedFields){
 }
     
     if(piece.type==="賢"){
-        applyWiseBuff(piece);
+    applyWiseBuff(piece);
+
+    render();
+
+    if(selectedPiece){
+        updatePieceInfo(selectedPiece);
     }
+}
     if(piece.type==="王"){
         kingRestLine=Math.floor(Math.random()*BOARD_SIZE);
         logKingRest(piece,kingRestLine);
@@ -1543,7 +1550,7 @@ function applyWiseBuff(wise){
             continue;
         }
 
-        p.buffTurns = 1;
+        p.buffTurns = 2;
 
         logWiseBuff(wise,p);
     }
@@ -1898,10 +1905,12 @@ function createRebellionField(piece,trigger=false){
 
 function showSkillButtons(piece){
 
-    const button = document.getElementById("skillButton");
-    button.style.display = "inline-block";
-
     clearSkillButtons();
+
+const button =
+document.getElementById("skillButton");
+
+button.style.display="inline-block";
 
     const area =
         document.getElementById("skillArea");
