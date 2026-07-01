@@ -425,6 +425,10 @@ body{
   background: orange !important;
 }
 
+button:disabled{
+    background:#888;
+}
+
 #skillPanel{
     margin:12px 0;
 }
