@@ -209,6 +209,13 @@ startDraft();
   
 function render(){
   boardEl.innerHTML = "";
+
+boardEl.style.gridTemplateColumns =
+    `repeat(${BOARD_SIZE},70px)`;
+
+boardEl.style.gridTemplateRows =
+    `repeat(${BOARD_SIZE},70px)`;
+
   let status =
 `Round ${roundCount}　${ownerName(currentTurn)}のターン`;
 
