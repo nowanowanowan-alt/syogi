@@ -203,6 +203,7 @@ document.getElementById("draftBackBtn").onclick =
     cancelDraftPlacement;
 
 render();
+startDraft();
 
 }
   
@@ -328,12 +329,6 @@ else if(isDraftPhase && placingDraftPiece){
 else{
     updatePieceInfo(null);
 }
-
-document.getElementById("startBtn").onclick=()=>{
-document.getElementById("startBtn").style.display="none";
-document.getElementById("modeSelect").style.display="block";
-};
-
 }
 
 function ownerName(team){
@@ -2498,10 +2493,11 @@ function bishopReturnWarp(piece){
 function showStartScreen(){
 
     boardEl.innerHTML = "";
-    document.getElementById("modeSelect").style.display = "none";
-    document.getElementById("draftUI").style.display = "none";
-
-    document.getElementById("startBtn").style.display = "inline-block";
+document.getElementById("modeSelect").style.display = "none";
+document.getElementById("draftUI").style.display = "none";
+document.getElementById("startBtn").style.display = "inline-block";
+document.getElementById("skillButton").style.display="none";
+document.getElementById("skillArea").style.display="none";
 }
 
 function applyGameMode(mode){
