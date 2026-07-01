@@ -145,40 +145,9 @@ function createPiece(data){
 }
 
 function setupGame(){
-  const selectedMode =
-document.querySelector(
-'input[name="mode"]:checked'
-).value;
 
-gameMode = selectedMode;
-
-switch(gameMode){
-
-case "normal":
-
-    BOARD_SIZE=9;
-
-    TURN_ACTIONS=1;
-
-    break;
-
-case "fast":
-
-    BOARD_SIZE=9;
-
-    TURN_ACTIONS=2;
-
-    break;
-
-case "large":
-
-    BOARD_SIZE=15;
-
-    TURN_ACTIONS=1;
-
-    break;
-}
-
+  applyGameMode(gameMode);
+ 
   pieces = [];
 
   fields = [];
@@ -229,8 +198,6 @@ pieces.push(
 );
 
 turnActionsLeft = TURN_ACTIONS;
-
-document.getElementById("modeSelect").style.display = "block";
 
 document.getElementById("draftBackBtn").onclick =
     cancelDraftPlacement;
@@ -362,17 +329,11 @@ else{
     updatePieceInfo(null);
 }
 
-  document
-    .getElementById("startBtn")
-    .onclick=()=>{
-      document
-        .getElementById("startBtn")
-        .style.display="none";
-      document
-        .getElementById("draftUI")
-        .style.display="block";
-      startDraft();
-    };
+document.getElementById("startBtn").onclick=()=>{
+document.getElementById("startBtn").style.display="none";
+document.getElementById("modeSelect").style.display="block";
+};
+
 }
 
 function ownerName(team){
@@ -533,10 +494,11 @@ endTurn();
 
 }
 
-if(skillMode){
+if(skillMode && skillMode!=="bishopWarp"){
     handleSkillClick(x,y);
     return;
-  }
+}
+
   if(
     skillPiece &&
     skillPiece.type==="角" &&
@@ -1766,6 +1728,11 @@ function createRadiusField(piece,radius,type,trigger = false){
       if(!inside(x,y)){
         continue;
       }
+
+if(x===piece.x && y===piece.y){
+    continue;
+}
+
       const field = {
         type,
         team: piece.team,
@@ -1919,19 +1886,14 @@ button.style.display="inline-block";
 
     button.onclick=()=>{
 
-        area.style.display=
-
-            area.style.display==="block"
-
-            ? "none"
-
-            : "block";
-    };
+    button.style.display="none";
+    area.style.display="block";
+};
     document.getElementById("skillArea").style.display="none";
 
 if(!skillUnlocked[piece.team]){
 
-    button.disabled=false;
+    button.disabled=true;
 
     button.textContent="🔒 特殊スキル";
 
@@ -2121,7 +2083,9 @@ if(turnActionsLeft>0){
 }
 
 endTurn();
-  
+  document.getElementById("skillButton").style.display="inline-block";
+document.getElementById("skillArea").style.display="none";
+
   }
 
 function cancelSkill(){
@@ -2160,6 +2124,10 @@ function cancelSkill(){
         selectedCell = null;
         render();
     }
+
+document.getElementById("skillButton").style.display="inline-block";
+document.getElementById("skillArea").style.display="none";
+
 }
 
 function addSkillButton(text,callback,enabled=true){
@@ -2485,6 +2453,10 @@ function finishWiseFieldSkill(){
     highlightMoves(skillPiece);
 
     skillPiece=null;
+
+document.getElementById("skillButton").style.display="inline-block";
+document.getElementById("skillArea").style.display="none";
+
 }
 
 function bishopReturnWarp(piece){
@@ -2522,6 +2494,15 @@ function bishopReturnWarp(piece){
 //========================
 // モード選択
 //========================
+
+function showStartScreen(){
+
+    boardEl.innerHTML = "";
+    document.getElementById("modeSelect").style.display = "none";
+    document.getElementById("draftUI").style.display = "none";
+
+    document.getElementById("startBtn").style.display = "inline-block";
+}
 
 function applyGameMode(mode){
 
@@ -3432,4 +3413,53 @@ document.addEventListener(
     e => e.preventDefault()
 );
 
-setupGame();
+document.getElementById("startBtn").onclick = () => {
+
+    document.getElementById("startBtn").style.display = "none";
+    document.getElementById("modeSelect").style.display = "block";
+
+};
+
+document.getElementById("normalBtn").onclick = () => {
+
+    applyGameMode("normal");
+
+    setupGame();
+
+    document.getElementById("modeSelect").style.display = "none";
+
+    document.getElementById("draftUI").style.display = "block";
+
+    startDraft();
+
+};
+
+document.getElementById("fastBtn").onclick = () => {
+
+    applyGameMode("fast");
+
+    setupGame();
+
+    document.getElementById("modeSelect").style.display = "none";
+
+    document.getElementById("draftUI").style.display = "block";
+
+    startDraft();
+
+};
+
+document.getElementById("largeBtn").onclick = () => {
+
+    applyGameMode("large");
+
+    setupGame();
+
+    document.getElementById("modeSelect").style.display = "none";
+
+    document.getElementById("draftUI").style.display = "block";
+
+    startDraft();
+
+};
+
+showStartScreen();
