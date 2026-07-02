@@ -207,14 +207,17 @@ startDraft();
 
 }
   
+
 function render(){
   boardEl.innerHTML = "";
 
-boardEl.style.gridTemplateColumns =
-    `repeat(${BOARD_SIZE},70px)`;
+  const CELL_SIZE = Math.floor(630 / BOARD_SIZE);
 
-boardEl.style.gridTemplateRows =
-    `repeat(${BOARD_SIZE},70px)`;
+  boardEl.style.gridTemplateColumns =
+      `repeat(${BOARD_SIZE},${CELL_SIZE}px)`;
+
+  boardEl.style.gridTemplateRows =
+      `repeat(${BOARD_SIZE},${CELL_SIZE}px)`;
 
   let status =
 `Round ${roundCount}　${ownerName(currentTurn)}のターン`;
