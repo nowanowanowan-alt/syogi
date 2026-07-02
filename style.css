@@ -1,3 +1,11 @@
+:root{
+    --board-size: 13;
+    --cell-size: 48px;
+    --piece-width: calc(var(--cell-size) * 0.77);
+    --piece-height: calc(var(--cell-size) * 0.86);
+    --piece-font: calc(var(--cell-size) * 0.38);
+}
+
 html,
 body{
     overflow:hidden;
@@ -31,11 +39,12 @@ body{
 }
 
 #board{
-  display:grid;
-  grid-template-columns:repeat(9,70px);
-  grid-template-rows:repeat(9,70px);
-  border:4px solid #5c3b1e;
-  background:#c89b63;
+    display:grid;
+    grid-template-columns:repeat(var(--board-size), var(--cell-size));
+    grid-template-rows:repeat(var(--board-size), var(--cell-size));
+
+    border:4px solid #5c3b1e;
+    background:#c89b63;
 }
 
 .board-area{
@@ -44,8 +53,9 @@ body{
 }
 
 .cell{
-  width:70px;
-  height:70px;
+  width:var(--cell-size);
+  height:var(--cell-size);
+  aspect-ratio:1;
   border:1px solid #7a4e26;
   display:flex;
   justify-content:center;
@@ -58,8 +68,9 @@ body{
 }
 
 .piece{
-  width:54px;
-  height:60px;
+    width:var(--piece-width);
+    height:var(--piece-height);
+    font-size:var(--piece-font);
 
   background:#f6d57a;
 
@@ -88,8 +99,8 @@ body{
 
 .piece-wrapper{
     position:relative;
-    width:54px;
-    height:60px;
+    width:var(--piece-width);
+    height:var(--piece-height);
 }
 
 .piece-body{
