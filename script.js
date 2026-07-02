@@ -3425,44 +3425,36 @@ document.getElementById("startBtn").onclick = () => {
 
 document.getElementById("normalBtn").onclick = () => {
 
-boardEl.style.display = "grid";
+    boardEl.style.display = "grid";
+    document.getElementById("modeSelect").style.display = "none";
+
+document.getElementById("draftUI").style.display = "block";
 
     applyGameMode("normal");
 
     setupGame();
-
-    document.getElementById("modeSelect").style.display = "none";
-
-    document.getElementById("draftUI").style.display = "block";
-
 };
 
 document.getElementById("fastBtn").onclick = () => {
 
-boardEl.style.display = "grid";
+    boardEl.style.display = "grid";
+    document.getElementById("modeSelect").style.display = "none";
+    document.getElementById("draftUI").style.display = "block";
 
     applyGameMode("fast");
 
     setupGame();
-
-    document.getElementById("modeSelect").style.display = "none";
-
-    document.getElementById("draftUI").style.display = "block";
-
 };
 
 document.getElementById("largeBtn").onclick = () => {
 
-boardEl.style.display = "grid";
+    boardEl.style.display = "grid";
+    document.getElementById("modeSelect").style.display = "none";
+    document.getElementById("draftUI").style.display = "block";
 
     applyGameMode("large");
 
     setupGame();
-
-    document.getElementById("modeSelect").style.display = "none";
-
-    document.getElementById("draftUI").style.display = "block";
-
 };
 
 showStartScreen();
