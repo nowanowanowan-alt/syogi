@@ -2499,12 +2499,12 @@ function bishopReturnWarp(piece){
 
 function showStartScreen(){
 
-    boardEl.innerHTML = "";
-document.getElementById("modeSelect").style.display = "none";
-document.getElementById("draftUI").style.display = "none";
-document.getElementById("startBtn").style.display = "inline-block";
-document.getElementById("skillButton").style.display="none";
-document.getElementById("skillArea").style.display="none";
+    boardEl.style.display = "none";
+    document.getElementById("modeSelect").style.display = "none";
+    document.getElementById("draftUI").style.display = "none";
+    document.getElementById("startBtn").style.display = "inline-block";
+    document.getElementById("skillButton").style.display = "none";
+    document.getElementById("skillArea").style.display = "none";
 }
 
 function applyGameMode(mode){
@@ -3425,6 +3425,8 @@ document.getElementById("startBtn").onclick = () => {
 
 document.getElementById("normalBtn").onclick = () => {
 
+boardEl.style.display = "grid";
+
     applyGameMode("normal");
 
     setupGame();
@@ -3433,11 +3435,11 @@ document.getElementById("normalBtn").onclick = () => {
 
     document.getElementById("draftUI").style.display = "block";
 
-    startDraft();
-
 };
 
 document.getElementById("fastBtn").onclick = () => {
+
+boardEl.style.display = "grid";
 
     applyGameMode("fast");
 
@@ -3447,11 +3449,11 @@ document.getElementById("fastBtn").onclick = () => {
 
     document.getElementById("draftUI").style.display = "block";
 
-    startDraft();
-
 };
 
 document.getElementById("largeBtn").onclick = () => {
+
+boardEl.style.display = "grid";
 
     applyGameMode("large");
 
@@ -3460,8 +3462,6 @@ document.getElementById("largeBtn").onclick = () => {
     document.getElementById("modeSelect").style.display = "none";
 
     document.getElementById("draftUI").style.display = "block";
-
-    startDraft();
 
 };
 
